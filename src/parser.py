@@ -15,8 +15,8 @@ def parse_tracks():
     Builds the tracks matrix #tracks x #attributes (20635 x 4)
     where attributes are track_id,album_id,artist_id,duration_sec
     """
-    with open(data_path + '/tracks.csv', 'r') as file:
-        lines = file.readlines()[1:]
+    with open(data_path + '/tracks.csv', 'r') as f:
+        lines = f.readlines()[1:]
         num_tracks = len(lines)
         tracks_matrix = np.zeros((num_tracks, NUM_TRACK_ATTRIBUTES), dtype=np.int32)
 
@@ -32,8 +32,8 @@ def parse_interactions():
     Builds the interactions (sparse) matrix #playlist x #items (50446 x 20635)
     If playlist i has item(track) j then interactions_matrix[i][j] = 1 otherwise 0
     """
-    with open(data_path + '/train.csv', 'r') as file:
-        lines = file.readlines()[1:]
+    with open(data_path + '/train.csv', 'r') as f:
+        lines = f.readlines()[1:]
 
         num_playlist = NUM_PLAYLIST
         num_tracks = NUM_TRACKS
@@ -57,8 +57,8 @@ def parse_targets():
     Column 1 to 10 are the recommendations for that playlist
     """
 
-    with open(data_path + '/target_playlists.csv', 'r') as file:
-        lines = file.readlines()[1:]
+    with open(data_path + '/target_playlists.csv', 'r') as f:
+        lines = f.readlines()[1:]
 
         targets_matrix = np.zeros((NUM_TARGETS, NUM_RECOMMENDATIONS_PER_SONG + 1), dtype=np.int32)
 
