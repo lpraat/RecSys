@@ -5,7 +5,7 @@ NUM_TRACK_ATTRIBUTES = 4
 NUM_PLAYLIST = 50446
 NUM_TRACKS = 20635
 NUM_TARGETS = 10000
-NUM_RECOMMENDATIONS_PER_SONG = 10
+NUM_RECOMMENDATIONS_PER_PLAYLIST = 10
 
 data_path = os.path.dirname(os.path.realpath(__file__)) + "/../data"
 
@@ -49,8 +49,8 @@ def parse_interactions():
 
 def parse_targets():
     """
-    Builds the matrix to be filled with recommendations.
-    It is a matrix #targets x #recommendations+1 (10000 x 11).
+    Builds the matrix to be filled with recommendations
+    It is a matrix #targets x #recommendations+1 (10000 x 11)
 
     Why 11 columns?
     Column 0 is the id of the target playlist
@@ -60,7 +60,7 @@ def parse_targets():
     with open(data_path + '/target_playlists.csv', 'r') as f:
         lines = f.readlines()[1:]
 
-        targets_matrix = np.zeros((NUM_TARGETS, NUM_RECOMMENDATIONS_PER_SONG + 1), dtype=np.int32)
+        targets_matrix = np.zeros((NUM_TARGETS, NUM_RECOMMENDATIONS_PER_PLAYLIST + 1), dtype=np.int32)
 
         for index, line in enumerate(lines):
             playlist_id = int(line)
