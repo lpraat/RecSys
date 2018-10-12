@@ -1,11 +1,7 @@
 import numpy as np
 import os
 
-NUM_TRACK_ATTRIBUTES = 4
-NUM_PLAYLIST = 50446
-NUM_TRACKS = 20635
-NUM_TARGETS = 10000
-NUM_RECOMMENDATIONS_PER_PLAYLIST = 10
+from src.const import NUM_TRACK_ATTRIBUTES, NUM_PLAYLIST, NUM_TRACKS, NUM_TARGETS, NUM_RECOMMENDATIONS_PER_PLAYLIST
 
 data_path = os.path.dirname(os.path.realpath(__file__)) + "/../data"
 
@@ -71,4 +67,3 @@ def parse_targets():
 # To visualize data
 # print(parse_tracks())
 # print(parse_interactions())
-# print(parse_targets())
