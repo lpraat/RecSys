@@ -8,6 +8,6 @@ The last 5k target playlists (from playlist_id=3 to playlist_id=50424) are rando
 
 Interesting articles/papers from the world of recommenders:
 
-- [Matrix Factorization](https://arxiv.org/pdf/1509.06461.pdf)
+- [Matrix Factorization](http://nicolas-hug.com/blog/matrix_facto_1)
 - [Deep learning algorithms](https://arxiv.org/pdf/1707.07435.pdf)
 - [Neural Collaborative Filtering](https://www.comp.nus.edu.sg/~xiangnan/papers/ncf.pdf)
