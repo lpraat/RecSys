@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import scipy.sparse as sp
 
 from src.const import NUM_TRACK_ATTRIBUTES, NUM_PLAYLIST, NUM_TRACKS, NUM_TARGETS, NUM_RECOMMENDATIONS_PER_PLAYLIST
 
@@ -42,6 +43,22 @@ def parse_interactions():
 
     return interactions_matrix
 
+def parse_interactions_alt():
+
+    with open(data_path + '/train.csv', 'r') as f:
+        lines = f.readlines()[1:]
+
+        num_playlist = NUM_PLAYLIST
+        num_tracks = NUM_TRACKS
+
+        mat = sp.dok_matrix((num_playlist, num_tracks), dtype=np.int32)
+        for line in lines:
+            user, item = [int(i) for i in line.split(",")]
+            mat[user, item] = 1.0
+
+        return mat
+
+
 
 def parse_targets():
     """
@@ -65,5 +82,6 @@ def parse_targets():
     return targets_matrix
 
 # To visualize data
-# print(parse_tracks())
-# print(parse_interactions())
+#print(parse_tracks())
+#print(parse_interactions())
+#print(parse_targets())

@@ -2,7 +2,7 @@ import os
 
 import datetime
 
-from src.parser import parse_targets
+from src.parser import parse_targets, parse_interactions
 
 
 def create_submission(name, recs):
@@ -17,6 +17,3 @@ def create_submission(name, recs):
             f.write(str(row[0]) + ",")
             f.write(" ".join([str(el) for el in row[1:]]))
             f.write("\n")
-
-# example
-create_submission("", parse_targets())
