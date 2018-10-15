@@ -1,12 +1,8 @@
 import os
-import pickle
 import numpy as np
 import scipy.sparse as sp
 
-from src.const import NUM_TRACK_ATTRIBUTES, NUM_PLAYLIST, NUM_TRACKS, NUM_TARGETS, NUM_RECOMMENDATIONS_PER_PLAYLIST
-
-data_path = os.path.dirname(os.path.realpath(__file__)) + "/../data"
-
+from src.const import *
 
 def parse_tracks():
     """
@@ -25,7 +21,7 @@ def parse_tracks():
     return tracks_matrix
 
 
-def parse_interactions_old():
+def parse_interactions():
     """
     Builds the interactions (sparse) matrix #playlist x #items (50446 x 20635)
     If playlist i has item(track) j then interactions_matrix[i][j] = 1 otherwise 0
@@ -45,13 +41,13 @@ def parse_interactions_old():
     return interactions_matrix
 
 
-def parse_interactions(file):
+def parse_interactions_alt():
     """
     Builds the interactions matrix using a sparse matrix (#playlists x #tracks)
     If playlist i has item(track) j then interactions_matrix[i][j] = 1, otherwise 0
     """
 
-    with open(data_path + "/" + file, 'r') as f:
+    with open(data_path + '/train.csv', 'r') as f:
         # Discard first element
         lines = f.readlines()[1:]
 
@@ -63,6 +59,51 @@ def parse_interactions(file):
 
         # Return matrix
         return mat
+
+
+def parse_train_set(file):
+    """
+    Parse the interaction matrix and return the train set
+    """
+
+    with open(os.path.join(data_path, file), "r") as f:
+        # Discard first line
+        f.readline()
+
+        # Create data containers
+        interactions    = sp.dok_matrix((NUM_PLAYLIST, NUM_TRACKS), dtype=np.int32)
+        train_set       = sp.dok_matrix((NUM_PLAYLIST, NUM_TRACKS), dtype=np.int32)
+        test_set        = []
+
+        # Read line by line
+        line = f.readline()
+        next = f.readline()
+        while line:
+            playlist, track = [int(i) for i in line.split(",")]
+
+            if next:
+                nextPlaylist, _ = [int(i) for i in next.split(",")]
+            else:
+                nextPlaylist = -1
+            
+            print("rec({}, {})".format(playlist, track))
+
+            # Add to interactions
+            interactions[playlist, track] = 1
+
+            # Add to train set only if not last
+            if nextPlaylist == playlist:
+                train_set[playlist, track] = 1
+            else:
+                # Discard last insertion
+                # and insert it in the test set
+                test_set.append(track)
+
+            # Next line
+            line = next + ""
+            next = f.readline()
+        
+        return (interactions, train_set, test_set) 
 
 
 def parse_targets():
