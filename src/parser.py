@@ -1,5 +1,6 @@
-import numpy as np
 import os
+import pickle
+import numpy as np
 import scipy.sparse as sp
 
 from src.const import NUM_TRACK_ATTRIBUTES, NUM_PLAYLIST, NUM_TRACKS, NUM_TARGETS, NUM_RECOMMENDATIONS_PER_PLAYLIST
@@ -24,7 +25,7 @@ def parse_tracks():
     return tracks_matrix
 
 
-def parse_interactions():
+def parse_interactions_old():
     """
     Builds the interactions (sparse) matrix #playlist x #items (50446 x 20635)
     If playlist i has item(track) j then interactions_matrix[i][j] = 1 otherwise 0
@@ -43,21 +44,25 @@ def parse_interactions():
 
     return interactions_matrix
 
-def parse_interactions_alt():
 
-    with open(data_path + '/train.csv', 'r') as f:
+def parse_interactions(file):
+    """
+    Builds the interactions matrix using a sparse matrix (#playlists x #tracks)
+    If playlist i has item(track) j then interactions_matrix[i][j] = 1, otherwise 0
+    """
+
+    with open(data_path + "/" + file, 'r') as f:
+        # Discard first element
         lines = f.readlines()[1:]
 
-        num_playlist = NUM_PLAYLIST
-        num_tracks = NUM_TRACKS
-
-        mat = sp.dok_matrix((num_playlist, num_tracks), dtype=np.int32)
+        # Create sparse matrix
+        mat = sp.dok_matrix((NUM_PLAYLIST, NUM_TRACKS), dtype=np.int32)
         for line in lines:
-            user, item = [int(i) for i in line.split(",")]
-            mat[user, item] = 1.0
+            playlist, track = [int(i) for i in line.split(",")]
+            mat[playlist, track] = 1
 
+        # Return matrix
         return mat
-
 
 
 def parse_targets():
@@ -83,5 +88,6 @@ def parse_targets():
 
 # To visualize data
 #print(parse_tracks())
-#print(parse_interactions())
+#print(parse_interactions_old())
 #print(parse_targets())
+#print(load_interactions("/train.csv"))
