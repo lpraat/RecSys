@@ -1,62 +1,119 @@
 import os
+import random
 import pickle
+import numpy as np
+import scipy.sparse as sp
 
-from src.parser import parse_train_set
+from src.const  import data_path, cache_path, NUM_PLAYLIST, NUM_TRACKS
+from src.parser import parse_interactions
 
-data_path = os.path.dirname(os.path.realpath(__file__)) + "/../data"
-cache_path = os.path.dirname(os.path.realpath(__file__)) + "/../cache"
+
+def build_train_set(interactions, k = 2):
+    # Output variables
+    train_set   = interactions.tocsr()
+    test_set    = sp.dok_matrix((NUM_PLAYLIST, NUM_TRACKS), dtype = np.int32)
+
+    for playlist_id in range(NUM_PLAYLIST):
+        # Get tracks
+        tracks = [key[1] for key in interactions[playlist_id].keys()]
+
+        # Adjust k to have at least one track in playlist
+        k = len(tracks) - 1 if len(tracks) <= k else k
+
+        # Generate indices to extract from interactions
+        # This indices are added to the test set
+        indices = []
+        for _ in range(k):
+            t = random.randint(0, len(tracks) - 1)
+            while t in indices:
+                t = random.randint(0, len(tracks) - 1)
+                
+            # Remove and add to test set
+            track_id = tracks[t]
+            train_set[playlist_id, track_id] = 0
+            test_set[playlist_id, track_id] = 1
+        
+        # Debug
+        print("building train set: {:.2}".format(playlist_id / float(NUM_PLAYLIST)))
+    
+
+    # Return built sets
+    return (train_set, test_set)
+
+
+def load_file(filename):
+    """ Tries to load a file from persistent cache """
+
+    try:
+        f = open(cache_path + "/" + filename, "rb")
+        return pickle.load(f)
+    
+    except FileNotFoundError:
+        return None
+
+
+def save_file(filename, obj):
+    """ Save an object to the persistent cache and return the object """
+
+    if obj != None:
+        # Create directory if necessary
+        os.makedirs(cache_path, exist_ok=True)
+
+        with open(cache_path + "/" + filename, "wb") as f:
+            pickle.dump(obj, f)
+    
+    # Return object
+    return obj
 
 
 class Cache:
 
 
     def __init__(self):
-        """
-        Create cache and load all data files
-        """
+        """ Create cache and load required data in cache """
         # Load data
         self.assets = {}
         self.load_all()
-        pass
 
 
     def load_all(self):
-        """
-        Load all data files
-        """
+        """ Load all data files """
 
         # Get train data
-        interactions    = self.load_file("interactions.obj")
-        train_set       = self.load_file("train_set.obj")
-        test_set        = self.load_file("test_set.obj")
-        if interactions == None or train_set == None or test_set == None:
-            # Parse train and test sets
-            interactions, train_set, test_set = parse_train_set("train.csv")
-            self.save_file("interactions.obj", interactions)
-            self.save_file("train_set.obj", train_set)
-            self.save_file("test_set.obj", test_set)
+        interactions    = load_file("interactions.obj")
+        train_set       = load_file("train_set.obj")
+        test_set        = load_file("test_set.obj")
+        
+        if interactions == None:
+            interactions = parse_interactions()
+            save_file("interactions.obj", interactions)
+        
+        if train_set == None or test_set == None:
+            train_set, test_set = build_train_set(interactions, 2)
+            save_file("train_set.obj", train_set)
+            save_file("test_set.obj", test_set)
         
         # Load in cache
-        self.set_records([
-            ("interactions", interactions),
-            ("train_set", train_set),
-            ("test_set", test_set)
-        ])
+        self.store_multi({
+            "interactions": interactions,
+            "train_set": train_set,
+            "test_set": test_set
+        })
 
 
-    def get_record(self, file):
+    def fetch(self, key):
         """
-        Fetch record from cache
+        Get a cache record associated with the provided key
         """
 
         # Return cached result or none
-        if file in self.assets:
-            return self.assets[file]
+        if key in self.assets:
+            return self.assets[key]
         else:
             return None
 
 
-    def set_record(self, file, obj):
+    def store(self, file, obj):
         """
         Set a cache record
         """
@@ -65,40 +122,10 @@ class Cache:
         self.assets.update({file:obj})
 
     
-    def set_records(self, records):
+    def store_multi(self, records):
         """
         Set multiple records at once
         """
 
-        for record in records:
-            self.set_record(record[0], record[1])
-    
-
-    def load_file(self, file):
-        """
-        Tries to load a file from persistent cache
-        """
-
-        try:
-            f = open(cache_path + "/" + file, "rb")
-            return pickle.load(f)
-        
-        except FileNotFoundError:
-            return None
-
-
-    def save_file(self, file, obj):
-        """
-        Save an object to the persistent cache and return the object
-        """
-
-        if obj != None:
-            # Create directory if necessary
-            os.makedirs(cache_path, exist_ok=True)
-
-            with open(cache_path + "/" + file, "wb") as f:
-                pickle.dump(obj, f)
-        
-        # Return object
-        return obj
+        self.assets.update(records)
 
