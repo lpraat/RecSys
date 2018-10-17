@@ -10,12 +10,23 @@ from src.parser import parse_interactions
 
 def build_train_set(interactions, k = 2):
     # Output variables
-    train_set   = interactions.tocsr()
+    items       = list(interactions.items())
+    train_set   = interactions.copy()
     test_set    = sp.dok_matrix((NUM_PLAYLIST, NUM_TRACKS), dtype = np.int32)
 
+    pos = 0
     for playlist_id in range(NUM_PLAYLIST):
         # Get tracks
-        tracks = [key[1] for key in interactions[playlist_id].keys()]
+        tracks = []
+        for i in range(pos, len(items)):
+            key = items[i][0]
+
+            if playlist_id != key[0]:
+                break
+            
+            # Add to track list
+            tracks.append(key[1])
+            pos += 1
 
         # Adjust k to have at least one track in playlist
         k = len(tracks) - 1 if len(tracks) <= k else k
@@ -34,7 +45,7 @@ def build_train_set(interactions, k = 2):
             test_set[playlist_id, track_id] = 1
         
         # Debug
-        print("building train set: {:.2}".format(playlist_id / float(NUM_PLAYLIST)))
+        print("building train set: {}".format(playlist_id))
     
 
     # Return built sets
