@@ -1,10 +1,8 @@
-import numpy as np
 import os
+import numpy as np
+import scipy.sparse as sp
 
-from src.const import NUM_TRACK_ATTRIBUTES, NUM_PLAYLIST, NUM_TRACKS, NUM_TARGETS, NUM_RECOMMENDATIONS_PER_PLAYLIST
-
-data_path = os.path.dirname(os.path.realpath(__file__)) + "/../data"
-
+from src.const import *
 
 def parse_tracks():
     """
@@ -14,7 +12,7 @@ def parse_tracks():
     with open(data_path + '/tracks.csv', 'r') as f:
         lines = f.readlines()[1:]
         num_tracks = len(lines)
-        tracks_matrix = np.zeros((num_tracks, NUM_TRACK_ATTRIBUTES), dtype=np.int32)
+        tracks_matrix = np.zeros((num_tracks, NUM_TRACK_ATTRIBUTES), dtype = np.int32)
 
         for index, line in enumerate(lines):
             track_id, album_id, artist_id, duration_sec = [int(i) for i in line.split(",")]
@@ -23,24 +21,27 @@ def parse_tracks():
     return tracks_matrix
 
 
-def parse_interactions():
-    """
-    Builds the interactions (sparse) matrix #playlist x #items (50446 x 20635)
-    If playlist i has item(track) j then interactions_matrix[i][j] = 1 otherwise 0
-    """
-    with open(data_path + '/train.csv', 'r') as f:
+def parse_interactions(filename = "train.csv"):
+    """ Parse the train data and return the interaction matrix alone """
+
+    with open(os.path.join(data_path, filename), "r") as f:
+        # Discard first line
         lines = f.readlines()[1:]
+        num_lines = float(len(lines))
 
-        num_playlist = NUM_PLAYLIST
-        num_tracks = NUM_TRACKS
+        # Create container
+        interactions = sp.dok_matrix((NUM_PLAYLIST, NUM_TRACKS), dtype=np.int32)
 
-        interactions_matrix = np.zeros((num_playlist, num_tracks), dtype=np.int32)
+        for i, line in enumerate(lines):
+            playlist, track = [int(i) for i in line.split(",")]
+            interactions[playlist, track] = 1
 
-        for line in lines:
-            playlist_id, track_id = [int(i) for i in line.split(",")]
-            interactions_matrix[playlist_id][track_id] = 1
+            # Debug
+            print("\033[2J")
+            print("parsing interactions: {:.2}".format(i / num_lines))
 
-    return interactions_matrix
+        # Return matrix
+        return interactions
 
 
 def parse_targets():
@@ -65,5 +66,7 @@ def parse_targets():
     return targets_matrix
 
 # To visualize data
-# print(parse_tracks())
-# print(parse_interactions())
+#print(parse_tracks())
+#print(parse_interactions_old())
+#print(parse_targets())
+#print(load_interactions("/train.csv"))

@@ -1,4 +1,16 @@
-# Temp files and cache ---------------------------------
+# Temp and cache --------------------------------
 .DS_Store
-.idea
 __pycache__
+.ipynb_checkpoints
+cache
+/data/processed
+submissions
+temp/
+
+# Environments ----------------------------------
+env
+.env
+
+# Editors ---------------------------------------
+.vscode
+.idea
