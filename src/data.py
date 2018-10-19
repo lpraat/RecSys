@@ -1,4 +1,5 @@
 import os
+import math
 import random
 import pickle
 import numpy as np
@@ -8,7 +9,7 @@ from src.const  import data_path, cache_path, NUM_PLAYLIST, NUM_TRACKS
 from src.parser import parse_interactions, parse_tracks, parse_targets
 
 
-def build_train_set(interactions, k = 1):
+def build_train_set_fixed(interactions, k = 1):
     # Output variables
     items       = list(interactions.items())
     train_set   = interactions.copy()
@@ -48,8 +49,53 @@ def build_train_set(interactions, k = 1):
         test_set.append(test_set_i)
         
         # Debug
-        print("building train set: {}".format(playlist_id))
+        #print("building train set: {}".format(playlist_id))
     
+
+    # Return built sets
+    return (train_set, test_set)
+
+def build_train_set_uniform(interactions, p = 0.15):
+    # Output variables
+    items       = list(interactions.items())
+    train_set   = interactions.copy()
+    test_set    = []
+
+    pos = 0
+    for playlist_id in range(NUM_PLAYLIST):
+        # Get tracks
+        tracks = []
+        for i in range(pos, len(items)):
+            key = items[i][0]
+
+            if playlist_id != key[0]:
+                break
+            
+            # Add to track list
+            tracks.append(key[1])
+            pos += 1
+
+        # Calc number of tracks to extract
+        k = math.ceil(len(tracks) * p)
+
+        # Generate indices to extract from interactions
+        # This indices are added to the test set
+        indices = []
+        test_set_i = []
+        for _ in range(k):
+            t = random.randint(0, len(tracks) - 1)
+            while t in indices:
+                t = random.randint(0, len(tracks) - 1)
+            indices.append(t)
+                
+            # Remove and add to test set
+            track_id = tracks[t]
+            train_set[playlist_id, track_id] = 0
+            test_set_i.append(track_id)
+        test_set.append(test_set_i)
+        
+        # Debug
+        print("building train set: {}".format(playlist_id))
 
     # Return built sets
     return (train_set, test_set)
@@ -108,7 +154,7 @@ class Cache:
             save_file("interactions.obj", interactions)
         
         if train_set == None or test_set == None:
-            train_set, test_set = build_train_set(interactions, 1)
+            train_set, test_set = build_train_set_uniform(interactions, 0.1)
             save_file("train_set.obj", train_set)
             save_file("test_set.obj", test_set)
 

@@ -14,7 +14,7 @@ cache = Cache()
 data    = cache.fetch("train_set").tocsr()
 albums  = cache.fetch("album_set").tocsr()
 artists = cache.fetch("artist_set").tocsr()
-test = cache.fetch("test_set")
+test    = cache.fetch("test_set")
 
 rankings = get_rankings(data, albums, artists, weights = [1, 0, 0], normalize = [False, False, False]).tocsr()
 
