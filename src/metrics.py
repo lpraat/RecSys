@@ -31,7 +31,9 @@ def leave_one_out(preds, test_set, k = 10):
     score = 0
 
     for i, pred in enumerate(preds):
-        if test_set[i] in pred[:k]:
-            score += 1.
-    
+        test_set_i = test_set[i]
+        for test_elem in test_set_i:
+            if test_elem in pred:
+                score += 1
+
     return score / len(preds)

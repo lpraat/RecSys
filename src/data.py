@@ -5,14 +5,14 @@ import numpy as np
 import scipy.sparse as sp
 
 from src.const  import data_path, cache_path, NUM_PLAYLIST, NUM_TRACKS
-from src.parser import parse_interactions
+from src.parser import parse_interactions, parse_tracks, parse_targets
 
 
-def build_train_set(interactions, k = 2):
+def build_train_set(interactions, k = 1):
     # Output variables
     items       = list(interactions.items())
     train_set   = interactions.copy()
-    test_set    = sp.dok_matrix((NUM_PLAYLIST, NUM_TRACKS), dtype = np.int32)
+    test_set    = []
 
     pos = 0
     for playlist_id in range(NUM_PLAYLIST):
@@ -34,15 +34,18 @@ def build_train_set(interactions, k = 2):
         # Generate indices to extract from interactions
         # This indices are added to the test set
         indices = []
+        test_set_i = []
         for _ in range(k):
             t = random.randint(0, len(tracks) - 1)
             while t in indices:
                 t = random.randint(0, len(tracks) - 1)
+            indices.append(t)
                 
             # Remove and add to test set
             track_id = tracks[t]
             train_set[playlist_id, track_id] = 0
-            test_set[playlist_id, track_id] = 1
+            test_set_i.append(track_id)
+        test_set.append(test_set_i)
         
         # Debug
         print("building train set: {}".format(playlist_id))
@@ -94,21 +97,37 @@ class Cache:
         interactions    = load_file("interactions.obj")
         train_set       = load_file("train_set.obj")
         test_set        = load_file("test_set.obj")
+
+        album_set       = load_file("album_set.obj")
+        artist_set      = load_file("artist_set.obj")
+
+        targets         = load_file("targets.obj")
         
         if interactions == None:
             interactions = parse_interactions()
             save_file("interactions.obj", interactions)
         
         if train_set == None or test_set == None:
-            train_set, test_set = build_train_set(interactions, 2)
+            train_set, test_set = build_train_set(interactions, 1)
             save_file("train_set.obj", train_set)
             save_file("test_set.obj", test_set)
+
+        if album_set == None or artist_set == None:
+            album_set, artist_set = parse_tracks()
+            save_file("album_set.obj", album_set)
+            save_file("artist_set.obj", artist_set)
+
+        if targets == None:
+            targets = parse_targets()
+            save_file("targets.obj", targets)
         
         # Load in cache
         self.store_multi({
             "interactions": interactions,
             "train_set": train_set,
-            "test_set": test_set
+            "test_set": test_set,
+            "album_set": album_set,
+            "artist_set": artist_set
         })
 
 

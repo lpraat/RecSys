@@ -11,7 +11,7 @@ def create_submission(name, recs):
     """
     submissions_path = os.path.dirname(os.path.realpath(__file__)) + "/../submissions"
 
-    with open(submissions_path + '/' + name + str(datetime.datetime.now()), 'w') as f:
+    with open(os.path.join(submissions_path, name + str(datetime.datetime.now())), 'w') as f:
         f.write("playlist_id,track_ids\n")
         for row in recs:
             f.write(str(row[0]) + ",")
