@@ -17,14 +17,14 @@ from src.metrics import evaluate
 class ItemKNN(RecSys):
 
 
-    def __init__(self, h = 0, alpha = 0.5):
+    def __init__(self, h = 3, alpha = 0.5):
         # Super constructor
         super().__init__()
 
         # Initial values
         self.dataset    = "train_set"
         self.h          = h
-        self.alpha      = alpha
+        self.alpha      = np.float32(alpha)
 
     
     def run(self, targets, k = 10):
@@ -50,7 +50,7 @@ class ItemKNN(RecSys):
         
         # Update similarity matrix
         start = timer()
-        s = s.multiply(norm_factors).tocsc()
+        s = s.multiply(norm_factors).tocsr()
         print("elapsed: {:.3}s\n".format(timer() - start))
 
         # Release memory
@@ -71,15 +71,16 @@ class ItemKNN(RecSys):
         preds = []
         for i in targets:
             # Get rows
-            dataset_i = dataset.getrow(i).A.ravel()
-            ratings_i = ratings.getrow(i).A.ravel()
+            dataset_i = dataset.getrow(i).A.ravel().astype(np.uint8)
+            ratings_i = ratings.getrow(i).A.ravel().astype(np.float32)
 
             # Filter out existing items
-            ratings_i = ratings_i * (1 - dataset_i)
+            mask        = 1 - dataset_i
+            ratings_i   = ratings_i * mask
 
             # Compute top k items
-            top_idxs    = np.argpartition(ratings_i, -10)[-10:]
-            sorted_idxs = np.argsort(ratings_i[top_idxs])
+            top_idxs    = np.argpartition(ratings_i, -k)[-k:]
+            sorted_idxs = np.argsort(-ratings_i[top_idxs])
             pred        = top_idxs[sorted_idxs]
 
             # Add prediction

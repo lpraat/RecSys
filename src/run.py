@@ -8,12 +8,13 @@ from src.const import NUM_PLAYLIST, NUM_TRACKS
 from src.metrics import evaluate
 from src.writer import create_submission
 from src.alg.item_knn import ItemKNN
-from src.alg.item_knn_simple import ItemKNNSimple
 from src.data import Cache, save_file, load_file
 
 # Run item KNN
 recsys = ItemKNN()
+recsys.dataset = "interactions"
 preds = recsys.run(range(NUM_PLAYLIST))
+create_submission("itemknn", preds)
 
 
 """ preds = []
