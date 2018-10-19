@@ -15,5 +15,5 @@ def create_submission(name, recs):
         f.write("playlist_id,track_ids\n")
         for row in recs:
             f.write(str(row[0]) + ",")
-            f.write(" ".join([str(el) for el in row[1:]]))
+            f.write(" ".join([str(el) for el in row[1]]))
             f.write("\n")

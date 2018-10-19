@@ -21,6 +21,18 @@ def map_at_k(preds, targets, k=10):
     return np.mean([ap_at_k(pred, target, k=k) for pred, target in zip(preds, targets)])
 
 
+def evaluate(preds, targets, k = 10):
+    ap = 0
+    for i in range(len(targets)):
+
+        pred = preds[i][1]
+        target = targets[i]
+
+        ap += ap_at_k(pred, target, k=min(len(target), 10))
+
+    return ap / len(targets)
+
+
 def leave_one_out(preds, test_set, k = 10):
     """
     Given the predictions and a test set, evaluates the performance
