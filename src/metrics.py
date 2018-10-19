@@ -2,12 +2,12 @@ import numpy as np
 
 
 def ap_at_k(pred, target, k=10):
-    hits = 0
-    acc = 0
+    hits = 0.
+    acc = 0.
     for i in range(k):
 
         if pred[i] in target:
-            hits += 1
+            hits += 1.0
             acc += hits / (i + 1)
 
     return acc / min(k, len(target))
@@ -28,7 +28,7 @@ def evaluate(preds, targets, k = 10):
         pred = preds[i][1]
         target = targets[i]
 
-        ap += ap_at_k(pred, target, k=min(len(target), 10))
+        ap += ap_at_k(pred, target, k = min(len(target), 10))
 
     return ap / len(targets)
 

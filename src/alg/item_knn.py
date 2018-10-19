@@ -3,9 +3,11 @@ Perform an item-based collaborative filtering algorithm
 to determine the ranking of each item for each user
 """
 
+import gc
 import numpy as np
 import scipy.sparse as sp
 import time
+from timeit import default_timer as timer
 
 from src.alg.recsys import RecSys
 from src.data import save_file
@@ -15,7 +17,7 @@ from src.metrics import evaluate
 class ItemKNN(RecSys):
 
 
-    def __init__(self, h = 5, alpha = 0.5):
+    def __init__(self, h = 0, alpha = 0.5):
         # Super constructor
         super().__init__()
 
@@ -25,45 +27,77 @@ class ItemKNN(RecSys):
         self.alpha      = alpha
 
     
-    def run(self, targets):
+    def run(self, targets, k = 10):
         """  """
 
-        train_set       = self.cache.fetch(self.dataset)
-        train_set_csr   = train_set.tocsr()
+        # Fetch dataset
+        dataset = self.cache.fetch(self.dataset).tocsr()
 
-        # Compute dot products between tracks
-        s = train_set_csr.T * train_set_csr
+        print("computing similarity matrix ...")
+        start = timer()
+        # Compute similarity matrix
+        s = dataset.T * dataset
+        s = s.tocsr()
 
-        # Compute tracks vector norms
-        norms = np.power(np.sum(train_set, axis = 0), self.alpha)
-        norms = np.asarray(norms).squeeze()
+        # Compute norms
+        norms           = dataset.sum(axis = 0).A.ravel()
+        norms           = np.power(norms, self.alpha)
+        norm_factors    = np.outer(norms, norms) + self.h
+        norm_factors    = np.divide(1, norm_factors, out = np.zeros_like(norm_factors), where = norm_factors != 0)
 
-        d = np.ndarray(s.shape, dtype = np.float32)
-        for ti in range(s.shape[0]):
-            print(ti)
-            for tj in range(s.shape[1]):
-                d[ti, tj] = norms[ti] * norms[tj] + self.h
+        # Release memory
+        del norms
+        
+        # Update similarity matrix
+        start = timer()
+        s = s.multiply(norm_factors).tocsc()
+        print("elapsed: {:.3}s\n".format(timer() - start))
 
-        # Calc normalized similarity matrix
-        s = s / d
+        # Release memory
+        del norm_factors
 
-        # Get tracks scores
-        scores = train_set_csr * s
+        print("computing ratings matrix ...")
+        start = timer()
+        # Compute playlist-track ratings
+        ratings = dataset * s
+        print("elapsed: {:.3}s\n".format(timer() - start))
 
-        # Get predictions
+        # Release memory
+        del s
+
+        print("predicting ...")
+        start = timer()
+        # Predict
         preds = []
-        for pi in targets:
-            print(pi)
-            # Get rankings for this playlist
-            # and filter out already added tracks
-            mask    = 1 - train_set.getrow(pi).toarray()
-            ranking = np.multiply(scores[pi, :], mask)
-            top = (-ranking).argsort()[:10]
+        for i in targets:
+            # Get rows
+            dataset_i = dataset.getrow(i).A.ravel()
+            ratings_i = ratings.getrow(i).A.ravel()
 
-            preds.append([pi, ] + top.tolist())
+            # Filter out existing items
+            ratings_i = ratings_i * (1 - dataset_i)
 
-        print("MAP@k=10 = {}".format(evaluate(preds, self.cache.fetch("test_set"))))
+            # Compute top k items
+            top_idxs    = np.argpartition(ratings_i, -10)[-10:]
+            sorted_idxs = np.argsort(ratings_i[top_idxs])
+            pred        = top_idxs[sorted_idxs]
+
+            # Add prediction
+            preds.append((i, list(pred)))
+
+        print("elapsed: {:.3}s\n".format(timer() - start))
+
+        # Release memory
+        del ratings
+
+        # @debug
+        # Evaluate predictions
+        score = evaluate(preds, self.cache.fetch("test_set"))
+        print(score)
+
+        # Return predictions
         return preds
+
 
 def get_rankings(interactions, *contexts, weights = [1], normalize = [True]):
     """ Given one ore more interaction matrices generate a ranking matrix from the similarity of the items """
