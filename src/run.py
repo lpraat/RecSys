@@ -1,20 +1,12 @@
-import numpy as np
-import scipy.sparse as sp
-import sklearn.metrics as metrics
-import pandas
-from timeit import default_timer as timer
-
-from src.const import NUM_PLAYLIST, NUM_TRACKS
+import src.alg as alg
+from src.const import NUM_PLAYLIST, NUM_TRACKS, NUM_ALBUMS
 from src.metrics import evaluate
 from src.writer import create_submission
-from src.alg.item_knn import ItemKNN
 from src.data import Cache, save_file, load_file
 
 # Run item KNN
-recsys = ItemKNN()
-recsys.dataset = "interactions"
+recsys = alg.ContentKNN(dataset = "train_set", features = [("album_set", 1.5), ("artist_set", 0.2)], h = 0, alpha = 0.5)
 preds = recsys.run(range(NUM_PLAYLIST))
-create_submission("itemknn", preds)
 
 
 """ preds = []

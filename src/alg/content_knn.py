@@ -9,20 +9,21 @@ import scipy.sparse as sp
 import time
 from timeit import default_timer as timer
 
-from .recsys import RecSys
+from src.alg.recsys import RecSys
 from src.data import save_file
 from src.metrics import evaluate
 
 
-class ItemKNN(RecSys):
+class ContentKNN(RecSys):
 
 
-    def __init__(self, h = 3, alpha = 0.5):
+    def __init__(self, dataset = "train_set", features = [], h = 3, alpha = 0.5):
         # Super constructor
         super().__init__()
 
         # Initial values
         self.dataset    = "train_set"
+        self.features   = features
         self.h          = h
         self.alpha      = np.float32(alpha)
 
@@ -33,37 +34,39 @@ class ItemKNN(RecSys):
         # Fetch dataset
         dataset = self.cache.fetch(self.dataset).tocsr()
 
-        print("computing similarity matrix ...")
-        start = timer()
-        # Compute similarity matrix
-        s = dataset.T * dataset
-        s = s.tocsr()
+        # Create ratings matrix
+        ratings = sp.csr_matrix(dataset.shape, dtype = np.float32)
 
-        # Compute norms
-        norms           = dataset.sum(axis = 0).A.ravel()
-        norms           = np.power(norms, self.alpha)
-        norm_factors    = np.outer(norms, norms) + self.h
-        norm_factors    = np.divide(1, norm_factors, out = np.zeros_like(norm_factors), where = norm_factors != 0)
+        for feature_name, feature_w in self.features:
 
-        # Release memory
-        del norms
+            print("computing similarity matrix for feature '{}' ...".format(feature_name))
+            start = timer()
+
+            # Fetch feature from cache
+            feature = self.cache.fetch(feature_name)
+
+            # Compute norms
+            norms           = feature.sum(axis = 0).A.ravel()
+            norms           = np.power(norms, self.alpha)
+            norm_factors    = np.outer(norms, norms) + self.h
+            norm_factors    = np.divide(1, norm_factors, out = np.zeros_like(norm_factors), where = norm_factors != 0)
+            del norms
+
+            # Compute similarity matrix
+            s = feature.T * feature
+            s = s.tocsr().multiply(norm_factors)
+            del norm_factors
+            print("elapsed: {:.3}s\n".format(timer() - start))
+            
+            print("computing ratings matrix for feature '{}' ...".format(feature_name))
+            start = timer()
+            # Compute playlist-track ratings using similarity between tracks
+            ratings += (dataset * s) * feature_w
+            del s
+            print("elapsed: {:.3}s\n".format(timer() - start))
         
-        # Update similarity matrix
-        start = timer()
-        s = s.multiply(norm_factors).tocsr()
-        print("elapsed: {:.3}s\n".format(timer() - start))
-
-        # Release memory
-        del norm_factors
-
-        print("computing ratings matrix ...")
-        start = timer()
-        # Compute playlist-track ratings
-        ratings = dataset * s
-        print("elapsed: {:.3}s\n".format(timer() - start))
-
-        # Release memory
-        del s
+        # Take average ratings
+        ratings = np.divide(ratings, sum([f[1] for f in self.features]))
 
         print("predicting ...")
         start = timer()

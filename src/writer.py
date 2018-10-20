@@ -10,6 +10,9 @@ def create_submission(name, recs):
     Builds the submission file from the recommendations matrix
     """
     submissions_path = os.path.dirname(os.path.realpath(__file__)) + "/../submissions"
+    
+    # Create directory if necessary
+    os.makedirs(submissions_path, exist_ok=True)
 
     with open(os.path.join(submissions_path, name + str(datetime.datetime.now())), 'w') as f:
         f.write("playlist_id,track_ids\n")
