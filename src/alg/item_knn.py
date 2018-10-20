@@ -17,12 +17,11 @@ from src.metrics import evaluate
 class ItemKNN(RecSys):
 
 
-    def __init__(self, h = 3, alpha = 0.5):
+    def __init__(self, dataset = "train_set", h = 3, alpha = 0.5):
         # Super constructor
-        super().__init__()
+        super().__init__(dataset)
 
         # Initial values
-        self.dataset    = "train_set"
         self.h          = h
         self.alpha      = np.float32(alpha)
 
@@ -30,6 +29,7 @@ class ItemKNN(RecSys):
     def run(self, targets, k = 10):
         """  """
 
+        print("loading data ...\n")
         # Fetch dataset
         dataset = self.cache.fetch(self.dataset).tocsr()
 
@@ -44,17 +44,13 @@ class ItemKNN(RecSys):
         norms           = np.power(norms, self.alpha)
         norm_factors    = np.outer(norms, norms) + self.h
         norm_factors    = np.divide(1, norm_factors, out = np.zeros_like(norm_factors), where = norm_factors != 0)
-
-        # Release memory
         del norms
         
         # Update similarity matrix
         start = timer()
         s = s.multiply(norm_factors).tocsr()
-        print("elapsed: {:.3}s\n".format(timer() - start))
-
-        # Release memory
         del norm_factors
+        print("elapsed: {:.3}s\n".format(timer() - start))
 
         print("computing ratings matrix ...")
         start = timer()
@@ -84,7 +80,7 @@ class ItemKNN(RecSys):
             pred        = top_idxs[sorted_idxs]
 
             # Add prediction
-            preds.append((i, list(pred)))
+            preds.append([i, list(pred)])
 
         print("elapsed: {:.3}s\n".format(timer() - start))
 
@@ -94,25 +90,7 @@ class ItemKNN(RecSys):
         # @debug
         # Evaluate predictions
         score = evaluate(preds, self.cache.fetch("test_set"))
-        print(score)
+        print("MAP@{}: {:.5}\n".format(k, score))
 
         # Return predictions
         return preds
-
-
-def get_rankings(interactions, *contexts, weights = [1], normalize = [True]):
-    """ Given one ore more interaction matrices generate a ranking matrix from the similarity of the items """
-
-    # Compute the similarity matrix
-    print("computing similarity matrix ...\n")
-
-    similarity = interactions.transpose().tocsr().dot(interactions.tocsc()) * (weights[0] / (interactions.shape[1] if normalize[0] else 1))
-    for i, context in enumerate(contexts):
-        similarity += context.transpose().tocsr().dot(context.tocsc()) * (weights[i + 1] / (context.shape[1] if normalize[i + 1] else 1))
-    
-    # Compute the ranking matrix
-    print("computing ranking matrix ...\n")
-
-    rankings = interactions.tocsr().dot(similarity.tocsc())
-
-    return rankings

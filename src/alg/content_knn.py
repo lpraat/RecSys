@@ -19,10 +19,9 @@ class ContentKNN(RecSys):
 
     def __init__(self, dataset = "train_set", features = [], h = 3, alpha = 0.5):
         # Super constructor
-        super().__init__()
+        super().__init__(dataset)
 
         # Initial values
-        self.dataset    = "train_set"
         self.features   = features
         self.h          = h
         self.alpha      = np.float32(alpha)
@@ -30,6 +29,9 @@ class ContentKNN(RecSys):
     
     def run(self, targets, k = 10):
         """  """
+
+        # Assert at least one feature
+        assert len(self.features) > 0
 
         # Fetch dataset
         dataset = self.cache.fetch(self.dataset).tocsr()
@@ -39,11 +41,12 @@ class ContentKNN(RecSys):
 
         for feature_name, feature_w in self.features:
 
+            print("loading data for feature '{}' ...\n".format(feature_name))
+            # Fetch feature from cache
+            feature = self.cache.fetch(feature_name).tocsr()
+
             print("computing similarity matrix for feature '{}' ...".format(feature_name))
             start = timer()
-
-            # Fetch feature from cache
-            feature = self.cache.fetch(feature_name)
 
             # Compute norms
             norms           = feature.sum(axis = 0).A.ravel()
@@ -54,7 +57,7 @@ class ContentKNN(RecSys):
 
             # Compute similarity matrix
             s = feature.T * feature
-            s = s.tocsr().multiply(norm_factors)
+            s = s.multiply(norm_factors).tocsr()
             del norm_factors
             print("elapsed: {:.3}s\n".format(timer() - start))
             
@@ -66,7 +69,7 @@ class ContentKNN(RecSys):
             print("elapsed: {:.3}s\n".format(timer() - start))
         
         # Take average ratings
-        ratings = np.divide(ratings, sum([f[1] for f in self.features]))
+        ratings /= sum([f[1] for f in self.features])
 
         print("predicting ...")
         start = timer()
@@ -97,25 +100,7 @@ class ContentKNN(RecSys):
         # @debug
         # Evaluate predictions
         score = evaluate(preds, self.cache.fetch("test_set"))
-        print(score)
+        print("MAP@{}: {:.5}\n".format(k, score))
 
         # Return predictions
         return preds
-
-
-def get_rankings(interactions, *contexts, weights = [1], normalize = [True]):
-    """ Given one ore more interaction matrices generate a ranking matrix from the similarity of the items """
-
-    # Compute the similarity matrix
-    print("computing similarity matrix ...\n")
-
-    similarity = interactions.transpose().tocsr().dot(interactions.tocsc()) * (weights[0] / (interactions.shape[1] if normalize[0] else 1))
-    for i, context in enumerate(contexts):
-        similarity += context.transpose().tocsr().dot(context.tocsc()) * (weights[i + 1] / (context.shape[1] if normalize[i + 1] else 1))
-    
-    # Compute the ranking matrix
-    print("computing ranking matrix ...\n")
-
-    rankings = interactions.tocsr().dot(similarity.tocsc())
-
-    return rankings

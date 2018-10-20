@@ -5,7 +5,13 @@ from src.writer import create_submission
 from src.data import Cache, save_file, load_file
 
 # Run item KNN
-recsys = alg.ContentKNN(dataset = "train_set", features = [("album_set", 1.5), ("artist_set", 0.2)], h = 0, alpha = 0.5)
+recsys = alg.Ensamble(dataset = "train_set", models = [
+    (alg.ItemKNN(), 1.8),
+    (alg.ContentKNN(features = [
+        ("album_set", 0.8),
+        ("artist_set", 0.2)
+    ]), 0.2)
+])
 preds = recsys.run(range(NUM_PLAYLIST))
 
 
