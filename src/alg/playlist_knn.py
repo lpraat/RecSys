@@ -9,7 +9,7 @@ from .recsys import RecSys
 from src.metrics import evaluate
 
 
-class ItemKNN(RecSys):
+class PlaylistKNN(RecSys):
     def __init__(self, dataset="train_set", alpha=0.5, asym=True, neighbours=None, h=0, qfunc=None):
         # Super constructor
         super().__init__(dataset)
@@ -31,11 +31,12 @@ class ItemKNN(RecSys):
         print("computing similarity matrix ...")
         start = timer()
         # Compute similarity matrix
-        s = dataset.T * dataset
+        s = dataset * dataset.T
         s = s.tocsr()
+        print(s.shape)
 
         # Compute norms
-        norms = dataset.sum(axis=0).A.ravel()
+        norms = dataset.sum(axis=1).A.ravel()
         norms_a = np.power(norms, self.alpha)
         if self.asym:
             assert 0. <= self.alpha <= 1., "alpha must be between 0 and 1"

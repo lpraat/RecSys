@@ -46,6 +46,8 @@ class Ensamble(RecSys):
         # Compute normalized probabilities
         cdf = np.array([model[1] for model in self.models])
         cdf /= sum(cdf)
+
+        print(len(cdf))
         
         print("computing final predictions with probabilities {} ...".format(cdf))
         start = timer()

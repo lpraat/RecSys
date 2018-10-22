@@ -28,7 +28,7 @@ def evaluate(preds, targets, k = 10):
         pred = preds[i][1]
         target = targets[i]
 
-        ap += ap_at_k(pred, target, k = min(len(target), 10))
+        ap += ap_at_k(pred, target, k = min(len(target), k))
 
     return ap / len(targets)
 

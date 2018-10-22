@@ -1,8 +1,12 @@
-import src.alg as alg
+from src.alg import ItemKNN, Ensamble
 from src.const import NUM_PLAYLIST
-from src.data import Cache, save_file, load_file
-import multiprocessing.pool
 
 # Run item KNN
-recsys = alg.ItemKNN(alpha = 0.65, h = 3, qfunc=lambda x: x ** 1.1)
-preds = recsys.run(range(NUM_PLAYLIST))
+#recsys = ItemKNN(alpha=0.3, h=0, neighbours=500, qfunc=lambda w: w ** 1.5)
+#preds = recsys.run(range(NUM_PLAYLIST))
+
+
+recsys = Ensamble(
+    models = [(ItemKNN(alpha=0.5, h=1700), 0.5),
+    (ItemKNN(alpha=0.5, h=100), 0.5)]
+).run(range(NUM_PLAYLIST))
