@@ -94,8 +94,11 @@ def predict(ratings, targets=None, k=10, mask=None, invert_mask=False):
         if True, invert the mask (slower)
     """
 
-    # Apply mask
+    # Convert to csr for fast row access
     mask = mask.tocsr()
+    ratings = ratings.tocsr()
+
+    # Apply mask
     if mask is not None and not invert_mask:
         ratings = ratings.multiply(mask).tocsr()
     

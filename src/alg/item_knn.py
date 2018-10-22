@@ -34,14 +34,12 @@ class ItemKNN(RecSys):
 
         # Determine targets
         if targets is None:
-            targets = self.cache.fetch("targets")
-            if targets is None:
-                targets = range(dataset.shape[0])
+            targets = range(dataset.shape[0])
 
         print("computing similarity matrix ...")
         start = timer()
         # Compute similarity matrix
-        s = cosine_similarity(dataset, alpha=self.alpha, asym=self.asym, h=self.h, knn=self.knn, dtype=np.float32)
+        s = cosine_similarity(dataset, alpha=self.alpha, asym=self.asym, h=self.h, knn=self.knn, qfunc=self.qfunc, dtype=np.float32)
         print("elapsed: {:.3f}s\n".format(timer() - start))
 
         print("computing ratings matrix ...")
@@ -65,7 +63,7 @@ class ItemKNN(RecSys):
     def evaluate(self, train_set="train_set", test_set="test_set", k=10):
         """ Evaluate model on train set using MAP@k metric """
 
-        print("loading data ...")
+        print("loading data ...\n")
         # Load data from cache
         train_set = self.cache.fetch(train_set)
         test_set = self.cache.fetch(test_set)
@@ -74,7 +72,7 @@ class ItemKNN(RecSys):
         print("computing similarity matrix ...")
         start = timer()
         # Compute similarity matrix
-        s = cosine_similarity(train_set, alpha=self.alpha, asym=self.asym, h=self.h, knn=self.knn, dtype=np.float32)
+        s = cosine_similarity(train_set, alpha=self.alpha, asym=self.asym, h=self.h, knn=self.knn, qfunc=self.qfunc, dtype=np.float32)
         print("elapsed time: {:.3f}s\n".format(timer() - start))
 
         print("computing ratings matrix ...")
@@ -93,7 +91,7 @@ class ItemKNN(RecSys):
 
         print("evaluating model ...")
         # Evaluate model
-        score = evaluate(preds, self.cache.fetch("test_set"))
+        score = evaluate(preds, test_set)
         print("MAP@{}: {:.5f}\n".format(k, score))
 
         return score

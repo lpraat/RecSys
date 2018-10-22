@@ -20,9 +20,9 @@ class UserKNN(RecSys):
         self.asym = asym
         self.h = np.float32(h)
         self.qfunc = qfunc
-        self.neighbours = neighbours
+        self.knn = knn
 
-    def run(self, targets, k=10):
+    def run(self, targets=None, k=10):
         """ Get predictions for dataset """
 
         print("loading data ...\n")
@@ -31,60 +31,62 @@ class UserKNN(RecSys):
 
         # Determine targets
         if targets is None:
-            targets = self.cache.fetch("targets")
-            if targets is None:
-                targets = range(dataset.shape[0])
+            targets = range(dataset.shape[0])
 
         print("computing similarity matrix ...")
         start = timer()
         # Compute similarity matrix
-        cosine_similarity(dataset.T, alpha=self.alpha, asym=self.asym, h=self.h, knn=self.knn, dtype=np.float32)
-        print("elapsed: {:.3F}s\n".format(timer() - start))
+        s = cosine_similarity(dataset.T, alpha=self.alpha, asym=self.asym, h=self.h, knn=self.knn, qfunc=self.qfunc, dtype=np.float32)
+        print("elapsed: {:.3f}s\n".format(timer() - start))
 
         print("computing ratings matrix ...")
         start = timer()
         # Compute playlist-track ratings
-        ratings = dataset * s
-        print("elapsed: {:.3}s\n".format(timer() - start))
+        ratings = (dataset.T * s).tocsr()
+        print("elapsed: {:.3f}s\n".format(timer() - start))
         del s
 
         print("predicting ...")
-        dataset = dataset.T
-        ratings = ratings.T
         start = timer()
         # Predict
-        preds = []
-        for i in targets:
-            # Get rows
-            dataset_i = dataset.getrow(i).A.ravel().astype(np.uint8)
-            ratings_i = ratings.getrow(i).A.ravel().astype(np.float32)
-
-            # Filter out existing items
-            mask = 1 - dataset_i
-            ratings_i = ratings_i * mask
-
-            # Compute top k items
-            top_idxs = np.argpartition(ratings_i, -k)[-k:]
-            sorted_idxs = np.argsort(-ratings_i[top_idxs])
-            pred = top_idxs[sorted_idxs]
-
-            # Add prediction
-            preds.append([i, list(pred)])
-            del dataset_i
-            del ratings_i
-            del mask
-
-        print("elapsed: {:.3}s\n".format(timer() - start))
+        preds = predict(ratings.T, targets=targets, k=k, mask=dataset, invert_mask=True)
+        print("elapsed: {:.3f}s\n".format(timer() - start))
         del ratings
 
         # Return predictions
         return preds
 
     
-    def evaluate(self, train_set = None):
+    def evaluate(self, train_set="train_set", test_set="test_set", k=10):
+        """ Evaluate model performance using MAP@k metric """
 
+        print("loading data ...")
+        # Load data from cache
+        train_set = self.cache.fetch(train_set)
+        test_set = self.cache.fetch(test_set)
+        assert train_set.shape[0] == len(test_set), "cardinality of train set and test set should match"
 
-        # @todo
+        print("computing similarity matrix ...")
+        start = timer()
+        # Compute similarity matrix
+        s = cosine_similarity(train_set.T, alpha=self.alpha, asym=self.asym, h=self.h, knn=self.knn, qfunc=self.qfunc, dtype=np.float32)
+        print("elapsed time: {:.3f}s\n".format(timer() - start))
+
+        print("computing ratings matrix ...")
+        start = timer()
+        # Compute ratings matrix
+        ratings = (train_set.T * s).tocsr()
+        print("elapsed time: {:.3f}s\n".format(timer() - start))
+        del s
+
+        print("computing predictions ...")
+        start = timer()
+        # Get predictions
+        preds = predict(ratings.T, targets=range(train_set.shape[0]), k=k, mask=train_set, invert_mask=True)
+        print("elapsed time: {:.3f}s\n".format(timer() - start))
+        del ratings
+
+        print("evaluating model ...")
         # Evaluate model
-        score = evaluate(preds, self.cache.fetch("test_set"))
-        print("MAP@{}: {:.5}\n".format(k, score))
+        score = evaluate(preds, test_set)
+        print("MAP@{}: {:.5f}\n".format(k, score))

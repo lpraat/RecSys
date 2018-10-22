@@ -28,9 +28,9 @@ class RecSys:
         self.dataset = dataset
     
 
-    def run(self, targets):
+    def run(self, targets=None, k=10):
         raise NotImplementedError
 
     
-    def evaluate(self, train_set = None):
+    def evaluate(self, train_set="train_set", test_set="test_set", k=10):
         raise NotImplementedError
