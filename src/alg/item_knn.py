@@ -17,13 +17,15 @@ from src.metrics import evaluate
 class ItemKNN(RecSys):
 
 
-    def __init__(self, dataset = "train_set", h = 3, alpha = 0.5):
+    def __init__(self, dataset = "train_set", alpha = 0.5, asym = True, h = 3, qfunc = None):
         # Super constructor
         super().__init__(dataset)
 
         # Initial values
-        self.h          = h
-        self.alpha      = np.float32(alpha)
+        self.alpha  = np.float32(alpha)
+        self.asym   = asym
+        self.h      = np.float32(h)
+        self.qfunc  = qfunc
 
     
     def run(self, targets, k = 10):
@@ -41,14 +43,26 @@ class ItemKNN(RecSys):
 
         # Compute norms
         norms           = dataset.sum(axis = 0).A.ravel()
-        norms           = np.power(norms, self.alpha)
-        norm_factors    = np.outer(norms, norms) + self.h
+        norms_a         = np.power(norms, self.alpha)
+        if self.asym:
+            assert self.alpha >= 0. and self.alpha <= 1.
+            norms_b         = np.power(norms, 1 - self.alpha)
+            norm_factors    = np.outer(norms_a, norms_b) + self.h
+        else:
+            norm_factors    = np.outer(norms_a, norms_a) + self.h
         norm_factors    = np.divide(1, norm_factors, out = np.zeros_like(norm_factors), where = norm_factors != 0)
         del norms
+        del norms_a
+        del norms_b
         
         # Update similarity matrix
         start = timer()
         s = s.multiply(norm_factors).tocsr()
+
+        # Apply qfunc
+        if self.qfunc != None:
+            qfunc = np.vectorize(self.qfunc)
+            s.data = qfunc(s.data)
         del norm_factors
         print("elapsed: {:.3}s\n".format(timer() - start))
 
