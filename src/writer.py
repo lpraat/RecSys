@@ -14,7 +14,7 @@ def create_submission(name, recs):
     # Create directory if necessary
     os.makedirs(submissions_path, exist_ok=True)
 
-    with open(os.path.join(submissions_path, name + str(datetime.datetime.now())), 'w') as f:
+    with open(os.path.join(submissions_path, name + str(datetime.datetime.now()) + ".csv"), 'w') as f:
         f.write("playlist_id,track_ids\n")
         for row in recs:
             f.write(str(row[0]) + ",")

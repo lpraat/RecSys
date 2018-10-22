@@ -12,11 +12,18 @@ def cosine_similarity(input, alpha=0.5, asym=True, h=0., knn=np.inf, qfunc=None,
 
     Parameters
     -------------
-    input: input sparse matrix (columns represents items for which we want to calculate the similarity coefficients)
-    alpha: norm value (1 -> norm-1, 0.5 -> norm-2)
-    asym: if true, generated matrix is not symmetric (i.e. order matters)
-    h: shrink term
-    dtype: underlying type on which to operate
+    input : sparse matrix
+        input matrix (columns represents items for which we want to calculate the similarity coefficients)
+    alpha : scalar, optional
+        determines type of norm (1 -> norm-1, 0.5 -> norm-2)
+    asym : bool, optional
+        if True generated matrix is not symmetric (i.e. order matters)
+    h : scalar, optional
+        shrink term
+    knn : integer, optional
+        number of nearest neighbours to consider (default: all)
+    dtype : data-type, optional
+        underlying type on which to operate
     """
     
     # Compute similarity matrix
@@ -75,9 +82,16 @@ def predict(ratings, targets=None, k=10, mask=None, invert_mask=False):
 
     Parameters
     ---------------
-    ratings: (user x items) ratings sparse matrix
-    targets: list of target users for which we want to predict
-    k: number of items to predict
+    ratings : sparse matrix
+        (user x items) ratings sparse matrix
+    targets : list, optional
+        list of target users for which we want to predict
+    k : integer, optional
+        number of items to predict
+    mask : sparse matrix, optional
+        mask to apply to the ratings matrix to ignore certain items
+    invert_mask : bool, optional
+        if True, invert the mask (slower)
     """
 
     # Apply mask
