@@ -49,7 +49,7 @@ class ItemKNN(RecSys):
         del norms
         del norms_a
 
-        norm_factors = np.divide(1, norm_factors, out=np.zeros_like(norm_factors), where=norm_factors != 0)
+        norm_factors = np.divide(1, norm_factors, out=norm_factors, where=norm_factors != 0)
 
         # Update similarity matrix
         start = timer()
@@ -57,13 +57,23 @@ class ItemKNN(RecSys):
 
         # K-nearest neighbours
         if self.neighbours:
-            lil_s = s.tolil()
-            s_neg = - s
+            
+            # For each row
+            for row in range(len(s.indptr) - 1):
 
-            for i in range(s.shape[0]):
-                lil_s[i, np.argpartition(s_neg.getrow(i).A.ravel(), self.neighbours)[self.neighbours:]] = 0
+                # Get row start and end offsets
+                row_start = s.indptr[row]
+                row_end = s.indptr[row + 1]
 
-            s = lil_s.tocsr()
+                # Get data slice from row
+                data = s.data[row_start:row_end]
+
+                if len(data) > self.neighbours:
+                    # Discard not meaningful data
+                    # We take the smallest similarities in the data array
+                    # and set those data values to 0 using row_start as offset
+                    nn = np.argpartition(data, -self.neighbours)[:-self.neighbours]
+                    s.data[nn + row_start] = 0
 
         # Apply qfunc
         if self.qfunc is not None:
@@ -103,14 +113,16 @@ class ItemKNN(RecSys):
             preds.append([i, list(pred)])
 
         print("elapsed: {:.3}s\n".format(timer() - start))
-
-        # Release memory
         del ratings
-
-        # @debug
-        # Evaluate predictions
-        score = evaluate(preds, self.cache.fetch("test_set"))
-        print("MAP@{}: {:.5}\n".format(k, score))
 
         # Return predictions
         return preds
+
+    
+    def evaluate(self, train_set = None):
+
+
+        # @todo
+        # Evaluate model
+        score = evaluate(preds, self.cache.fetch("test_set"))
+        print("MAP@{}: {:.5}\n".format(k, score))

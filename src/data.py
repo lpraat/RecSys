@@ -166,13 +166,6 @@ class Cache:
         if targets == None:
             targets = parse_targets()
             save_file("targets.obj", targets)
-
-        mat = np.array([
-            [1, 0, 1],
-            [0, 1, 0],
-            [1, 0, 0]
-        ])
-        mat = sp.dok_matrix(mat)
         
         # Load in cache
         self.store_multi({
@@ -181,7 +174,7 @@ class Cache:
             "test_set": test_set,
             "album_set": album_set,
             "artist_set": artist_set,
-            "knntest": mat
+            "targets": targets
         })
 
 

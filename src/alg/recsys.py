@@ -30,3 +30,7 @@ class RecSys:
 
     def run(self, targets):
         raise NotImplementedError
+
+    
+    def evaluate(self, train_set = None):
+        raise NotImplementedError

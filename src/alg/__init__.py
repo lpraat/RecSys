@@ -1,4 +1,5 @@
 # Export algorithms
 from .content_knn   import ContentKNN
 from .item_knn      import ItemKNN
-from .ensamble      import Ensamble
+from .ensemble      import Ensemble
+from .user_knn      import UserKNN

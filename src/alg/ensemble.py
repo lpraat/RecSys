@@ -11,9 +11,9 @@ from .recsys import RecSys
 from src.metrics import evaluate
 
 
-class Ensamble(RecSys):
+class Ensemble(RecSys):
     """
-    An ensamble model simply combines the results of tow or more algorithms
+    An ensemble model simply combines the results of tow or more algorithms
     picking from the predictions with different probabilities
     """
 
@@ -46,25 +46,35 @@ class Ensamble(RecSys):
         # Compute normalized probabilities
         cdf = np.array([model[1] for model in self.models])
         cdf /= sum(cdf)
-
-        print(len(cdf))
         
         print("computing final predictions with probabilities {} ...".format(cdf))
         start = timer()
+        preds_final = []
         # Cherry pick with probabilities p from predictions
         for ti in range(len(targets)):
             # Generate k pick indices
-            indices = np.random.choice(len(cdf), k, p = cdf)
-            for pi, m in enumerate(indices):
-                if m != 0:
-                    preds[0][ti][1][pi] = preds[m][ti][1][pi]
+            choices = np.random.choice(len(cdf), k, p = cdf)
+            
+            pred_ti = []
+            for m in choices:
+                pred_pi = preds[m][ti][1].pop(0)
+                while pred_pi in pred_ti:
+                    pred_pi = preds[m][ti][1].pop(0)
+                
+                pred_ti.append(pred_pi)
+            
+            preds_final.append((targets[ti], pred_ti))
 
-        preds = preds[0]
         print("elapsed time: {:.3}s\n".format(timer() - start))
 
-        # @debug
-        # Estimate model
+        # Return predictions
+        return preds_final
+
+    
+    def evaluate(self, train_set = None):
+
+
+        # @todo
+        # Evaluate model
         score = evaluate(preds, self.cache.fetch("test_set"))
         print("MAP@{}: {:.5}\n".format(k, score))
-
-        return preds

@@ -93,14 +93,16 @@ class ContentKNN(RecSys):
             preds.append((i, list(pred)))
 
         print("elapsed: {:.3}s\n".format(timer() - start))
-
-        # Release memory
         del ratings
-
-        # @debug
-        # Evaluate predictions
-        score = evaluate(preds, self.cache.fetch("test_set"))
-        print("MAP@{}: {:.5}\n".format(k, score))
 
         # Return predictions
         return preds
+
+    
+    def evaluate(self, train_set = None):
+
+
+        # @todo
+        # Evaluate model
+        score = evaluate(preds, self.cache.fetch("test_set"))
+        print("MAP@{}: {:.5}\n".format(k, score))

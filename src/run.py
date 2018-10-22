@@ -1,12 +1,17 @@
-from src.alg import ItemKNN, Ensamble
+from src.alg import ItemKNN, Ensemble, UserKNN
 from src.const import NUM_PLAYLIST
+from src.writer import create_submission
+from src.data import Cache
 
 # Run item KNN
-#recsys = ItemKNN(alpha=0.3, h=0, neighbours=500, qfunc=lambda w: w ** 1.5)
+#recsys = ItemKNN(alpha=0.5, h=2.7)
 #preds = recsys.run(range(NUM_PLAYLIST))
+#quit()
 
+cache = Cache()
 
-recsys = Ensamble(
-    models = [(ItemKNN(alpha=0.5, h=1700), 0.5),
-    (ItemKNN(alpha=0.5, h=100), 0.5)]
-).run(range(NUM_PLAYLIST))
+preds = Ensemble(dataset="interactions", models=[
+    (ItemKNN(), 0.8),
+    (UserKNN(neighbours=100), 0.2)
+]).run(cache.fetch("targets"))
+create_submission("item-user-knn", preds)

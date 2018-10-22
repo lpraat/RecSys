@@ -9,7 +9,7 @@ from .recsys import RecSys
 from src.metrics import evaluate
 
 
-class PlaylistKNN(RecSys):
+class UserKNN(RecSys):
     def __init__(self, dataset="train_set", alpha=0.5, asym=True, neighbours=None, h=0, qfunc=None):
         # Super constructor
         super().__init__(dataset)
@@ -26,21 +26,21 @@ class PlaylistKNN(RecSys):
 
         print("loading data ...\n")
         # Fetch dataset
-        dataset = self.cache.fetch(self.dataset).tocsr()
+        dataset = self.cache.fetch(self.dataset).tocsr().T
 
         print("computing similarity matrix ...")
         start = timer()
         # Compute similarity matrix
-        s = dataset * dataset.T
+        s = dataset.T * dataset
         s = s.tocsr()
-        print(s.shape)
 
         # Compute norms
-        norms = dataset.sum(axis=1).A.ravel()
-        norms_a = np.power(norms, self.alpha)
+        norms = dataset.sum(axis=0).A.ravel()
+        norms_a = np.power(norms, self.alpha, dtype=np.float32)
         if self.asym:
             assert 0. <= self.alpha <= 1., "alpha must be between 0 and 1"
-            norms_b = np.power(norms, 1 - self.alpha)
+            
+            norms_b = np.power(norms, 1 - self.alpha, dtype=np.float32)
             norm_factors = np.outer(norms_a, norms_b) + self.h
             del norms_b
 
@@ -50,27 +50,39 @@ class PlaylistKNN(RecSys):
         del norms
         del norms_a
 
-        norm_factors = np.divide(1, norm_factors, out=np.zeros_like(norm_factors), where=norm_factors != 0)
+        norm_factors = np.divide(1, norm_factors, out=norm_factors, where=norm_factors != 0)
 
         # Update similarity matrix
         start = timer()
         s = s.multiply(norm_factors).tocsr()
+        del norm_factors
 
         # K-nearest neighbours
         if self.neighbours:
-            lil_s = s.tolil()
-            s_neg = - s
+            
+            # For each row
+            for row in range(len(s.indptr) - 1):
 
-            for i in range(s.shape[0]):
-                lil_s[i, np.argpartition(s_neg.getrow(i).A.ravel(), self.neighbours)[self.neighbours:]] = 0
+                # Get row start and end offsets
+                row_start = s.indptr[row]
+                row_end = s.indptr[row + 1]
 
-            s = lil_s.tocsr()
+                # Get data slice from row
+                data = s.data[row_start:row_end]
+
+                if len(data) > self.neighbours:
+                    # Discard not meaningful data
+                    # We take the smallest similarities in the data array
+                    # and set those data values to 0 using row_start as offset
+                    nn = np.argpartition(data, -self.neighbours)[:-self.neighbours]
+                    s.data[nn + row_start] = 0
+
+            #s = s.tocsr()
 
         # Apply qfunc
-        if self.qfunc is not None:
+        if self.qfunc:
             qfunc = np.vectorize(self.qfunc)
             s.data = qfunc(s.data)
-        del norm_factors
         print("elapsed: {:.3}s\n".format(timer() - start))
 
         print("computing ratings matrix ...")
@@ -78,11 +90,11 @@ class PlaylistKNN(RecSys):
         # Compute playlist-track ratings
         ratings = dataset * s
         print("elapsed: {:.3}s\n".format(timer() - start))
-
-        # Release memory
         del s
 
         print("predicting ...")
+        dataset = dataset.T
+        ratings = ratings.T
         start = timer()
         # Predict
         preds = []
@@ -102,16 +114,21 @@ class PlaylistKNN(RecSys):
 
             # Add prediction
             preds.append([i, list(pred)])
+            del dataset_i
+            del ratings_i
+            del mask
 
         print("elapsed: {:.3}s\n".format(timer() - start))
-
-        # Release memory
         del ratings
-
-        # @debug
-        # Evaluate predictions
-        score = evaluate(preds, self.cache.fetch("test_set"))
-        print("MAP@{}: {:.5}\n".format(k, score))
 
         # Return predictions
         return preds
+
+    
+    def evaluate(self, train_set = None):
+
+
+        # @todo
+        # Evaluate model
+        score = evaluate(preds, self.cache.fetch("test_set"))
+        print("MAP@{}: {:.5}\n".format(k, score))
