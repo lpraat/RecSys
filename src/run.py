@@ -20,8 +20,7 @@ for h in np.linspace(0.5, 1.5, 10):
     print("current max: {}\n".format(max))
 print(max)
 quit() """
-preds = Ensemble(models=[
-    (ItemKNN(alpha=0.55), 0.4),
-    (UserKNN(alpha=0.55, knn=200), 0.6)
-]).run(targets="targets")
-create_submission("ensemble", preds)
+score = Ensemble(models=[
+    (ItemKNN(), 1.),
+    (UserKNN(), 1.)
+]).evaluate()

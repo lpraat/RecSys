@@ -4,7 +4,7 @@ import scipy.sparse as sp
 
 from src.const import *
 
-def parse_tracks(filename = "tracks.csv"):
+def parse_tracks(filename="tracks.csv"):
     """
     Builds the tracks matrix #tracks x #attributes (20635 x 4)
     where attributes are track_id,album_id,artist_id,duration_sec
@@ -18,8 +18,8 @@ def parse_tracks(filename = "tracks.csv"):
         assert num_lines == NUM_TRACKS
 
         # Build matrices
-        album_set   = sp.dok_matrix((NUM_ALBUMS, NUM_TRACKS), dtype = np.uint8)
-        artist_set  = sp.dok_matrix((NUM_ARTISTS, NUM_TRACKS), dtype = np.uint8)
+        album_set = sp.dok_matrix((NUM_ALBUMS, NUM_TRACKS), dtype = np.uint8)
+        artist_set = sp.dok_matrix((NUM_ARTISTS, NUM_TRACKS), dtype = np.uint8)
 
         for i, line in enumerate(lines):
             # Parse album and artist

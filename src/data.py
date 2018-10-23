@@ -154,7 +154,7 @@ class Cache:
             save_file("interactions.obj", interactions)
         
         if train_set == None or test_set == None:
-            train_set, test_set = build_train_set_uniform(interactions, 0.07)
+            train_set, test_set = build_train_set_uniform(interactions, 0.15)
             save_file("train_set.obj", train_set)
             save_file("test_set.obj", test_set)
 
