@@ -17,7 +17,7 @@ class Ensemble(RecSys):
     """
 
 
-    def __init__(self, dataset = "train_set", models = []):
+    def __init__(self, dataset = "interactions", models = []):
         """ Class constructor """
 
         # Super constructor
@@ -53,7 +53,7 @@ class Ensemble(RecSys):
         start = timer()
         preds_final = []
         # Cherry pick with probabilities p from predictions
-        for ti in range(len(targets)):
+        for ti in range(len(preds[0])):
             # Generate k pick indices
             choices = np.random.choice(len(cdf), k, p=cdf)
             
@@ -67,7 +67,7 @@ class Ensemble(RecSys):
                 pred_ti.append(pred_pi)
             
             # Append to final prediction
-            preds_final.append((targets[ti], pred_ti))
+            preds_final.append((preds[0][ti][0], pred_ti))
 
         print("elapsed time: {:.3f}s\n".format(timer() - start))
 

@@ -11,7 +11,7 @@ from src.metrics import evaluate
 
 
 class UserKNN(RecSys):
-    def __init__(self, dataset="train_set", alpha=0.5, asym=True, knn=np.inf, h=0, qfunc=None):
+    def __init__(self, dataset="interactions", alpha=0.5, asym=True, knn=np.inf, h=0, qfunc=None):
         # Super constructor
         super().__init__(dataset)
 
@@ -32,6 +32,8 @@ class UserKNN(RecSys):
         # Determine targets
         if targets is None:
             targets = range(dataset.shape[0])
+        else:
+            targets = self.cache.fetch(targets)
 
         print("computing similarity matrix ...")
         start = timer()

@@ -15,7 +15,7 @@ from src.metrics import evaluate
 class ContentKNN(RecSys):
 
 
-    def __init__(self, dataset = "train_set", features = []):
+    def __init__(self, dataset = "interactions", features = []):
         # Super constructor
         super().__init__(dataset)
 
@@ -35,6 +35,8 @@ class ContentKNN(RecSys):
         # Determine targets
         if targets is None:
             targets = range(dataset.shape[0])
+        else:
+            targets = self.cache.fetch(targets)
 
         # Create similarity matrix
         s = sp.csr_matrix((dataset.shape[1], dataset.shape[1]), dtype=np.float32)

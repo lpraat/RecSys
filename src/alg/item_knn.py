@@ -35,6 +35,8 @@ class ItemKNN(RecSys):
         # Determine targets
         if targets is None:
             targets = range(dataset.shape[0])
+        else:
+            targets = self.cache.fetch(targets)
 
         print("computing similarity matrix ...")
         start = timer()
