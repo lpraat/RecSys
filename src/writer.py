@@ -1,8 +1,5 @@
-import os
-
 import datetime
-
-from src.parser import parse_targets, parse_interactions
+import os
 
 
 def create_submission(name, recs):

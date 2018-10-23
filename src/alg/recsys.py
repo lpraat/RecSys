@@ -1,16 +1,22 @@
 """
-This file contains the base class for all recommender algorithms
+This file contains the base class for all recommender algorithms.
 """
 
 from src.data import Cache
 
 
 class RecSys:
-    """ Base class for recommender systems """
-    
+    """Abstract base class every recommender is built upon.
 
-    def __init__(self, dataset = "train_set"):
-        """ Base constructor """
+    Attributes
+    ----------
+    dataset : str
+        Name of the dataset from cache to be used to generate recommendations.
+    cache : Cache
+        The global cache where all the data is kept.
+    """
+
+    def __init__(self, dataset="train_set"):
 
         # Global cache
         global cache
@@ -26,11 +32,11 @@ class RecSys:
 
         # Initial dataset
         self.dataset = dataset
-    
 
-    def run(self, targets):
-        raise NotImplementedError
+    def run(self, targets=None, k=10):
+        """ Get k predictions for each target user """
+        raise NotImplementedError('every recommender must override run')
 
-    
-    def evaluate(self, train_set = None):
-        raise NotImplementedError
+    def evaluate(self, train_set="train_set", test_set="test_set", k=10):
+        """ Evaluate model on train set using MAP@k metric """
+        raise NotImplementedError('every recommender must override evaluate')

@@ -1,39 +1,60 @@
-import numpy as np
+"""
+This file contains the metrics through which recommenders are evaluated.
+"""
 
 
-def ap_at_k(pred, target, k=10):
+def ap_at_k(preds, targets, k=10):
+    """
+    Calculates the AP@K(Average Precision at K).
+
+    Parameters
+    -------------
+    preds : list
+        Predictions.
+    targets : list
+        Target (true) values.
+    k : int, optional
+        K in the MAP@K.
+    """
     hits = 0.
     acc = 0.
     for i in range(k):
 
-        if pred[i] in target:
+        if preds[i] in targets:
             hits += 1.0
             acc += hits / (i + 1)
 
-    return acc / min(k, len(target))
+    return acc / min(k, len(targets))
 
 
-def map_at_k(preds, targets, k=10):
+def evaluate(preds, targets, k=10):
     """
-    MAP(Mean Average Precision)@k
-    This is the metric used in the competition to evaluate a submission.
-    """
-    return np.mean([ap_at_k(pred, target, k=k) for pred, target in zip(preds, targets)])
+     Evaluates a model predictions against targets using MAP@K(Mean Average Precision at K) metric.
 
+     Parameters
+     -------------
+     preds : list
+         Model predictions as a list of tuples where the first element is the playlist id
+         and the second element is the list of predictions for that playlist.
+     targets : list
+         Target (true) values for every playlist.
+     k : int, optional
+         The K in the MAP@K.
+     """
 
-def evaluate(preds, targets, k = 10):
+    assert len(preds) == len(targets), "preds and targets must have the same size"
+
     ap = 0
     for i in range(len(targets)):
-
         pred = preds[i][1]
         target = targets[i]
 
-        ap += ap_at_k(pred, target, k = min(len(target), k))
+        ap += ap_at_k(pred, target, k=min(len(target), k))
 
     return ap / len(targets)
 
 
-def leave_one_out(preds, test_set, k = 10):
+def leave_one_out(preds, test_set, k=10):
     """
     Given the predictions and a test set, evaluates the performance
     based on the number of playlists whose test song is listed

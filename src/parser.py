@@ -1,10 +1,10 @@
-import os
 import numpy as np
 import scipy.sparse as sp
 
 from src.const import *
 
-def parse_tracks(filename = "tracks.csv"):
+
+def parse_tracks(filename="tracks.csv"):
     """
     Builds the tracks matrix #tracks x #attributes (20635 x 4)
     where attributes are track_id,album_id,artist_id,duration_sec
@@ -18,8 +18,8 @@ def parse_tracks(filename = "tracks.csv"):
         assert num_lines == NUM_TRACKS
 
         # Build matrices
-        album_set   = sp.dok_matrix((NUM_ALBUMS, NUM_TRACKS), dtype = np.uint8)
-        artist_set  = sp.dok_matrix((NUM_ARTISTS, NUM_TRACKS), dtype = np.uint8)
+        album_set = sp.dok_matrix((NUM_ALBUMS, NUM_TRACKS), dtype=np.uint8)
+        artist_set = sp.dok_matrix((NUM_ARTISTS, NUM_TRACKS), dtype=np.uint8)
 
         for i, line in enumerate(lines):
             # Parse album and artist
@@ -34,7 +34,7 @@ def parse_tracks(filename = "tracks.csv"):
         return (album_set, artist_set)
 
 
-def parse_interactions(filename = "train.csv"):
+def parse_interactions(filename="train.csv"):
     """ Parse the train data and return the interaction matrix alone """
 
     with open(os.path.join(data_path, filename), "r") as f:
@@ -43,7 +43,7 @@ def parse_interactions(filename = "train.csv"):
         num_lines = float(len(lines))
 
         # Create container
-        interactions = sp.dok_matrix((NUM_PLAYLIST, NUM_TRACKS), dtype = np.uint8)
+        interactions = sp.dok_matrix((NUM_PLAYLIST, NUM_TRACKS), dtype=np.uint8)
 
         for i, line in enumerate(lines):
             playlist, track = [int(i) for i in line.split(",")]
@@ -57,7 +57,7 @@ def parse_interactions(filename = "train.csv"):
         return interactions
 
 
-def parse_targets(filename = "target_playlists.csv"):
+def parse_targets(filename="target_playlists.csv"):
     """
     Builds the matrix to be filled with recommendations
     It is a matrix #targets x #recommendations+1 (10000 x 11)
@@ -70,7 +70,7 @@ def parse_targets(filename = "target_playlists.csv"):
     with open(os.path.join(data_path, filename), "r") as f:
         # Discard first line
         lines = f.readlines()[1:]
-        
+
         targets = []
         for line in lines:
             playlist_id = int(line)
