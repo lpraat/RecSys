@@ -15,63 +15,51 @@ from src.metrics import evaluate
 class ContentKNN(RecSys):
 
 
-    def __init__(self, dataset = "interactions", features = []):
+    def __init__(self, *features):
+        """
+        Constructor
+
+        Parameters
+        -----------
+        *features : list
+            Set of features in the form of (feature x items) sparse matrix.
+            Each feature is a tuple with a sparse matrix (or string)
+            a weight and a dict of configurations
+        """
+
         # Super constructor
-        super().__init__(dataset)
+        super().__init__()
 
         # Initial values
-        self.features   = features
-
-    
-    def run(self, targets=None, k = 10):
-        """ Get k predictions for each user """
-
-        # Assert at least one feature
-        assert len(self.features) > 0, "no feature specified"
-
-        # Fetch dataset
-        dataset = self.cache.fetch(self.dataset).tocsr()
-
-        # Determine targets
-        if targets is None:
-            targets = range(dataset.shape[0])
-        else:
-            targets = self.cache.fetch(targets)
+        self.features = features
+        
+        
+    def rate(self, dataset):
 
         # Create similarity matrix
         s = sp.csr_matrix((dataset.shape[1], dataset.shape[1]), dtype=np.float32)
 
         # Get similarity for each feature
-        for feature_name, feature_w, feature_config in self.features:
+        i = 0
+        for feature, feature_w, feature_config in self.features:
+
+            # Get feature data
+            feature = self.cache.fetch(feature) if isinstance(feature, str) else feature
+            feature = feature.tocsr()
 
             # Get feature configuration
-            try:
-                feature_alpha = feature_config["alpha"]
-            except KeyError:
-                feature_alpha = 0.5
-            try:
-                feature_asym = feature_config["asym"]
-            except KeyError:
-                feature_asym = True
-            try:
-                feature_h = feature_config["h"]
-            except KeyError:
-                feature_h = 0
-            try:
-                feature_knn = feature_config["knn"]
-            except KeyError:
-                feature_knn = np.inf
-            try:
-                feature_qfunc = feature_config["qfunc"]
-            except KeyError:
-                feature_qfunc = None
+            feature_alpha = feature_config["alpha"] if "alpha" in feature_config else 0.5
+            feature_asym = feature_config["asym"] if "asym" in feature_config else True
+            feature_h = feature_config["h"] if "h" in feature_config else 0
+            feature_knn = feature_config["knn"] if "knn" in feature_config else np.inf
+            feature_qfunc = feature_config["qfunc"] if "qfunc" in feature_config else None
 
-            print("loading data for feature '{}' ...\n".format(feature_name))
+            print("loading data for feature {} ...\n".format(i))
             # Fetch feature from cache
-            feature = self.cache.fetch(feature_name).tocsr()
+            feature = self.cache.fetch(feature).tocsr()
 
             if feature is not None:
-                print("computing similarity matrix for feature '{}' ...".format(feature_name))
+                print("computing similarity matrix for feature {} ...".format(i))
                 start = timer()
                 # Compute similarity matrix
                 s += cosine_similarity(
@@ -86,104 +74,16 @@ class ContentKNN(RecSys):
                 print("elapsed: {:.3f}s\n".format(timer() - start))
 
             else:
-                print("feature {} not found".format(feature_name))
+                print("feature {} not found".format(i))
+            
+            # Next feature
+            feature += 1
 
         print("computing ratings matrix ...")
         start = timer()
-        # Compute playlist-track ratings using similarity between tracks
+        # Compute ratings
         ratings = (dataset * s).tocsr()
         print("elapsed: {:.3f}s\n".format(timer() - start))
         del s
 
-        print("predicting ...")
-        start = timer()
-        # Predict
-        preds = predict(ratings, targets=targets, k=k, mask=dataset, invert_mask=True)
-        print("elapsed: {:.3f}s\n".format(timer() - start))
-        del ratings
-
-        # Return predictions
-        return preds
-
-    
-    def evaluate(self, train_set="train_set", test_set="test_set", k=10):
-        """ Evaluate model performance using MAP@k metric """
-
-        # Assert at least one feature
-        assert len(self.features) > 0, "no feature specified"
-
-        print("loading data ...\n")
-        # Load data from cache
-        train_set = self.cache.fetch(train_set)
-        test_set = self.cache.fetch(test_set)
-        assert train_set.shape[0] == len(test_set), "cardinality of train set and test set should match"
-
-        # Create similarity matrix
-        s = sp.csr_matrix((train_set.shape[1], train_set.shape[1]), dtype=np.float32)
-
-        # Get similarity for each feature
-        for feature_name, feature_w, feature_config in self.features:
-
-            # Get feature configuration
-            try:
-                feature_alpha = feature_config["alpha"]
-            except KeyError:
-                feature_alpha = 0.5
-            try:
-                feature_asym = feature_config["asym"]
-            except KeyError:
-                feature_asym = True
-            try:
-                feature_h = feature_config["h"]
-            except KeyError:
-                feature_h = 0
-            try:
-                feature_knn = feature_config["knn"]
-            except KeyError:
-                feature_knn = np.inf
-            try:
-                feature_qfunc = feature_config["qfunc"]
-            except KeyError:
-                feature_qfunc = None
-
-            print("loading data for feature '{}' ...\n".format(feature_name))
-            # Fetch feature from cache
-            feature = self.cache.fetch(feature_name).tocsr()
-
-            if feature is not None:
-                print("computing similarity matrix for feature '{}' ...".format(feature_name))
-                start = timer()
-                # Compute similarity matrix
-                s += cosine_similarity(
-                    feature,
-                    alpha=feature_alpha,
-                    asym=feature_asym,
-                    h=feature_h,
-                    knn=feature_knn,
-                    qfunc=feature_qfunc,
-                    dtype=np.float32
-                ) * feature_w
-                print("elapsed: {:.3f}s\n".format(timer() - start))
-
-            else:
-                print("feature {} not found".format(feature_name))
-
-        print("computing ratings matrix ...")
-        start = timer()
-        # Compute playlist-track ratings using similarity between tracks
-        ratings = (train_set * s).tocsr()
-        print("elapsed: {:.3f}s\n".format(timer() - start))
-        del s
-
-        print("predicting ...")
-        start = timer()
-        # Predict
-        preds = predict(ratings, targets=range(train_set.shape[0]), k=k, mask=train_set, invert_mask=True)
-        print("elapsed: {:.3f}s\n".format(timer() - start))
-        del ratings
-
-        # Evaluate model
-        score = evaluate(preds, test_set)
-        print("MAP@{}: {:.5}\n".format(k, score))
-
-        return score
+        return ratings

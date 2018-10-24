@@ -5,12 +5,14 @@ from src.parser import parse_tracks, parse_interactions, parse_targets
 
 class TestParser(unittest.TestCase):
 
+
     def test_tracks_parser(self):
         tracks_matrix = parse_tracks()
 
         self.assertEqual(tracks_matrix.shape, (20635, 4))
         self.assertEqual(tracks_matrix[0][3], 167)
         self.assertEqual(tracks_matrix[20634][1], 12529)
+
 
     def test_parse_train(self):
         interactions_matrix = parse_interactions()
@@ -19,6 +21,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(interactions_matrix[0][1220], 1)
         self.assertEqual(interactions_matrix[89][7814], 1)
         self.assertEqual(interactions_matrix[50445][6971], 1)
+
 
     def test_parse_targets(self):
         targets_matrix = parse_targets()
