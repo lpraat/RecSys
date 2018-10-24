@@ -4,6 +4,8 @@ This file contains various utility functions used in most of the recommender alg
 
 import numpy as np
 import scipy.sparse as sp
+import random
+from timeit import default_timer as timer
 
 
 def cosine_similarity(input, alpha=0.5, asym=True, h=0., knn=np.inf, qfunc=None, dtype = np.float32):
@@ -74,6 +76,113 @@ def cosine_similarity(input, alpha=0.5, asym=True, h=0., knn=np.inf, qfunc=None,
     
     # Return computed similarity matrix
     return s
+
+
+def clusterize(input, s=None, k=8):
+    """
+    Given a (user x item) matrix, divide users in clusters based on similarity between users
+
+    Parameters
+    ---------------
+    input : sparse csr matrix
+        (user x item) interactions matrix
+    s : sparse csr matrix
+        pre calculated similarity matrix
+    k : integer
+        number of clusters
+    """
+
+    # Require a csr matrix for fast row access
+    assert isinstance(input, sp.csr_matrix), "csr_matrix required, {} given".format(type(input))
+    
+    if s is not None:
+        # Sanity check
+        assert s.shape[0] == s.shape[1] and s.shape[0] == input.shape[0], "similarity matrix dimensions don't match"
+        assert isinstance(s, sp.csr_matrix), "csr_matrix required, {} given".format(type(s))
+    else:
+        print("computing cosine similarities between users ...")
+        start = timer()
+        # Compute similarity between users
+        s = cosine_similarity(input.T, dtype=np.float32)
+        print("elapsed time: {:.3f}s".format(timer() - start))
+    
+    print("computing clusters of similar users ...")
+    start = timer()
+    # Randomly pick center for first cluster
+    u0 = np.random.randint(input.shape[0])
+
+    # Choose k - 1 furthest points from u0
+    clusters = [[u0]]
+    similarities = s.getrow(u0).A.ravel()
+    for i in range(1, k):
+        # Take furthest point
+        ui = np.argmin(similarities)
+        clusters.append([ui])
+
+        # Add similarities
+        similarities += s.getrow(ui).A.ravel()
+
+    # Compute clusters centers for convenience
+    cluster_centers = [cl[0] for cl in clusters]
+
+    # Row indices pointers of subsets, we start computing this here
+    subsets_indptr = [[
+        0,
+        input.indptr[cl[0] + 1] - input.indptr[cl[0]]
+    ] for cl in clusters]
+    # An incremental offset
+    subsets_indptr_off = [np.max(subsets_indptr[ki]) for ki, _ in enumerate(clusters)]
+
+    # Place each user in appropriate cluster
+    for ui in [i for i in range(input.shape[0]) if i not in cluster_centers]:
+        # Get row
+        row_i = s.getrow(ui).A.ravel()
+
+        # Compute similarities w.r.t each cluster
+        sim = []
+        for cl in clusters:
+            # Original averages on all sample
+            sim.append(np.average(row_i[cl]))
+        
+        # Put in cluster which nearest point is the absolute nearest
+        ki = np.argmax(sim)
+        clusters[ki].append(ui)
+        
+        # Determine
+        num_indices = input.indptr[ui + 1] - input.indptr[ui]
+        subsets_indptr[ki].append(num_indices + subsets_indptr_off[ki])
+        subsets_indptr_off[ki] += num_indices
+    
+    print("elapsed time: {:.3f}s".format(timer() - start))
+
+    print("splitting matrix in clusters ...")
+    start = timer()
+    # Create cluster matrices
+    counters = [0 for _ in clusters]
+    subsets = [sp.csr_matrix((
+        # Data
+        np.ones(subsets_indptr_off[ki], dtype=np.uint8),
+        # Indices
+        np.zeros(subsets_indptr_off[ki], dtype=np.uint16),
+        # Indptr
+        subsets_indptr[ki]
+    ), shape=(len(clusters[ki]), input.shape[1])) for ki in range(len(clusters))]
+    for ki, cl in enumerate(clusters):
+        for ui in cl:
+            # Get row ptrs
+            input_row_start = input.indptr[ui]
+            input_row_end = input.indptr[ui + 1]
+            subset_row_start = subsets[ki].indptr[counters[ki]]
+            subset_row_end = subsets[ki].indptr[counters[ki] + 1]
+            counters[ki] += 1
+
+            # Copy row slice
+            subsets[ki].indices[subset_row_start:subset_row_end] = input.indices[input_row_start:input_row_end]
+
+    print("elapsed time: {:.3f}s".format(timer() - start))
+    
+    # Return clusters
+    return clusters, subsets
 
 
 def predict(ratings, targets=None, k=10, mask=None, invert_mask=False):
