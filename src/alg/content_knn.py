@@ -113,7 +113,6 @@ class ContentKNN(RecSys):
         # Load data from cache
         train_set = self.cache.fetch(train_set)
         test_set = self.cache.fetch(test_set)
-        assert train_set.shape[0] == len(test_set), "cardinality of train set and test set should match"
 
         # Create similarity matrix
         s = sp.csr_matrix((train_set.shape[1], train_set.shape[1]), dtype=np.float32)

@@ -89,7 +89,6 @@ class UserKNN(RecSys):
         # Load data from cache
         train_set = self.cache.fetch(train_set)
         test_set = self.cache.fetch(test_set)
-        assert train_set.shape[0] == len(test_set), "cardinality of train set and test set should match"
 
         print("computing similarity matrix ...")
         start = timer()

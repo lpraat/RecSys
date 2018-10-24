@@ -53,6 +53,45 @@ def build_train_set_fixed(interactions, k=1):
     return (train_set, test_set)
 
 
+def build_train_set_uniform_from_targets(interactions, targets, p=0.15):
+    # Output variables
+    train_set = interactions.copy()
+    test_set = []
+
+    csr_inter = interactions.tocsr()
+
+    for playlist_id in targets:
+        # Get tracks
+        tracks = csr_inter.indices[csr_inter.indptr[playlist_id]:csr_inter.indptr[playlist_id+1]]
+
+        # Calc number of tracks to extract
+        k = math.ceil(len(tracks) * p)
+
+        # Generate indices to extract from interactions
+        # This indices are added to the test set
+        indices = []
+        test_set_i = []
+        for _ in range(k):
+            t = random.randint(0, len(tracks) - 1)
+            while t in indices:
+                t = random.randint(0, len(tracks) - 1)
+            indices.append(t)
+
+            # Remove and add to test set
+            track_id = tracks[t]
+            train_set[playlist_id, track_id] = 0
+            test_set_i.append(track_id)
+
+        test_set.append((playlist_id, test_set_i))
+
+        # Debug
+        print("building train set: {}".format(playlist_id))
+    print(test_set[:10])
+
+    # Return built sets
+    return train_set, test_set
+
+
 def build_train_set_uniform(interactions, p=0.15):
     # Output variables
     items = list(interactions.items())
@@ -148,10 +187,6 @@ class Cache:
             interactions = parse_interactions()
             save_file("interactions.obj", interactions)
 
-        if train_set == None or test_set == None:
-            train_set, test_set = build_train_set_uniform(interactions, 0.1)
-            save_file("train_set.obj", train_set)
-            save_file("test_set.obj", test_set)
 
         if album_set == None or artist_set == None:
             album_set, artist_set = parse_tracks()
@@ -161,6 +196,12 @@ class Cache:
         if targets == None:
             targets = parse_targets()
             save_file("targets.obj", targets)
+
+        if train_set == None or test_set == None:
+            # train_set, test_set = build_train_set_uniform(interactions, 0.1)
+            train_set, test_set = build_train_set_uniform_from_targets(interactions, targets, 0.2)
+            save_file("train_set.obj", train_set)
+            save_file("test_set.obj", test_set)
 
         # Load in cache
         self.store_multi({

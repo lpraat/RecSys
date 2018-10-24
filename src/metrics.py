@@ -42,14 +42,10 @@ def evaluate(preds, targets, k=10):
          The K in the MAP@K.
      """
 
-    assert len(preds) == len(targets), "preds and targets must have the same size"
-
     ap = 0
-    for i in range(len(targets)):
-        pred = preds[i][1]
-        target = targets[i]
-
-        ap += ap_at_k(pred, target, k=min(len(target), k))
+    for playlist_id, values in targets:
+        pred = preds[playlist_id][1]
+        ap += ap_at_k(pred, values, k=min(len(values), k))
 
     return ap / len(targets)
 
