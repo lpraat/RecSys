@@ -60,7 +60,7 @@ class RecSys:
             dataset = self.cache.fetch(dataset) if isinstance(dataset, str) else dataset
         else:
             dataset = self.cache.fetch("interactions")
-        dataset.tocsr()
+        dataset = dataset.tocsr()
 
         # Targets
         if targets is not None:
