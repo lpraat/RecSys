@@ -1,18 +1,24 @@
 """
-Perform an item-based collaborative filtering algorithm
-to determine the ranking of each item for each user
+This file contains the UserKNN recommender which performs
+a user-based collaborative filtering algorithm to determine the ranking
+of each item for each user.
 """
+
 import numpy as np
 import scipy.sparse as sp
 from timeit import default_timer as timer
 
+from src.metrics import evaluate
 from .recsys import RecSys
 from .utils import cosine_similarity, predict
-from src.metrics import evaluate
 
 
 class UserKNN(RecSys):
-    """ Recommends base on the similarity between users """
+    """
+    User based recommender.
+
+    Recommends base on the similarity between users
+    """
 
 
     def __init__(self, alpha=0.5, asym=True, knn=np.inf, h=0, qfunc=None):

@@ -1,24 +1,28 @@
 """
-This file contains the base class for all recommender algorithms
+This file contains the base class for all recommender algorithms.
 """
 
 from timeit import default_timer as timer
 
-from .utils import predict
 from src.data import Cache
 from src.metrics import evaluate
+from .utils import predict
 
 
 class RecSys:
-    """ Base class for recommender systems """
-    
+    """
+    Abstract base class every recommender is built upon.
+
+    Attributes
+    ----------
+    dataset : str
+        Name of the dataset from cache to be used to generate recommendations.
+    cache : Cache
+        The global cache where all the data is kept.
+    """
 
     def __init__(self):
-        """
-        Base constructor
-        
-        Here we query for a global cache and create one if it doesn't exist yet
-        """
+        """ Default constructor """
 
         # Global cache
         global cache

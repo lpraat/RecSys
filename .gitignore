@@ -6,6 +6,9 @@ cache
 /data/processed
 submissions
 temp/
+
+# Sync app folders
+.bitpocket
 .bitignore
 
 # Environments ----------------------------------

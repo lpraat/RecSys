@@ -1,3 +1,7 @@
+"""
+This file contains constants and program paths
+"""
+
 import os
 
 # Constants
@@ -12,5 +16,5 @@ NUM_RECOMMENDATIONS_PER_PLAYLIST = 10
 NUM_INTERACTIONS = 1211791
 
 # Paths
-data_path   = os.path.dirname(os.path.realpath(__file__)) + "/../data"
-cache_path  = os.path.dirname(os.path.realpath(__file__)) + "/../cache"
+data_path = os.path.dirname(os.path.realpath(__file__)) + "/../data"
+cache_path = os.path.dirname(os.path.realpath(__file__)) + "/../cache"

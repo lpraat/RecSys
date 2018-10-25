@@ -1,18 +1,24 @@
 """
-Combine (the predictions of) two or more models
+This file contains the Ensemble recommender which combines different models.
 """
+
+from timeit import default_timer as timer
 
 import numpy as np
 import scipy.sparse as sp
 from timeit import default_timer as timer
 
-from .recsys import RecSys
 from src.metrics import evaluate
+from .recsys import RecSys
 
 
 class Ensemble(RecSys):
-    """ An ensemble model simply combines the ratings of two or more models """
+    """
+    Ensemble recommender.
 
+    Recommends items to users by combining ratings from different
+    models according to a defined distribution.
+    """
 
     def __init__(self, *models):
         """

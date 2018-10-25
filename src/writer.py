@@ -1,14 +1,24 @@
-import os
+"""
+This file contains function used to write to disk
+and create submission files
+"""
 
 import datetime
-
-from src.parser import parse_targets, parse_interactions
+import os
 
 
 def create_submission(name, recs):
     """
     Builds the submission file from the recommendations matrix
+
+    Parameters
+    ---------------
+    name : string
+        Prefix of the submission file
+    recs : list
+        List of computed recommendations
     """
+
     submissions_path = os.path.dirname(os.path.realpath(__file__)) + "/../submissions"
     
     # Create directory if necessary

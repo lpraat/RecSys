@@ -3,16 +3,18 @@ Perform an item-based collaborative filtering algorithm
 to determine the ranking of each item for each user
 """
 
-import numpy as np
-import scipy.sparse as sp
 from timeit import default_timer as timer
 
+import numpy as np
+import scipy.sparse as sp
+
+from src.metrics import evaluate
 from .recsys import RecSys
 from .utils import cosine_similarity, predict
-from src.metrics import evaluate
 
 
 class ContentKNN(RecSys):
+    """ Content based recommender """
 
 
     def __init__(self, *features):
