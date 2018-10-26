@@ -7,6 +7,7 @@ import math
 import os
 import pickle
 import random
+from timeit import default_timer as timer
 
 from src.const import cache_path, NUM_PLAYLIST
 from src.parser import parse_interactions, parse_tracks, parse_targets
@@ -78,6 +79,8 @@ def build_train_set_uniform(interactions, targets=None, p=0.15):
     if targets is None:
         targets = range(interactions.shape[0])
 
+    print("building train set ...")
+    start = timer()
     # Output variables
     train_set = interactions.copy()
     test_set = []
@@ -109,7 +112,8 @@ def build_train_set_uniform(interactions, targets=None, p=0.15):
         test_set.append((playlist_id, test_set_i))
 
         # Debug
-        print("building train set: {}".format(playlist_id))
+        #print("building train set: {}".format(playlist_id))
+    print("elapsed time: {:.3f}s\n".format(timer() - start))
 
     # Return built sets
     return train_set, test_set
