@@ -91,6 +91,11 @@ def hyperparameter_search(callable_model, hyperparameters, cartesian_product=Fal
 
         return callable_thing.obj(*args, **kwargs)
 
+    def get_new_samples():
+        for h in hyperparameters:
+            h.random_sample()
+        return (h.value for h in hyperparameters)
+
     # Dict to store the results obtained for different combination for hyperparameters
     # Key -> Tuple(h1, h2, ..., hn) where hi is the ith hyperparameter value -> MAP@K
     history = dict()
@@ -112,12 +117,9 @@ def hyperparameter_search(callable_model, hyperparameters, cartesian_product=Fal
 
             else:
                 # Randomly sample from the hyperparameters intervals
-                for h in hyperparameters:
-                    h.random_sample()
-
-                new_hyperparameters = (h.value for h in hyperparameters)
+                new_hyperparameters = get_new_samples()
                 while new_hyperparameters in history:
-                    new_hyperparameters = (h.value for h in hyperparameters)
+                    new_hyperparameters = get_new_samples()
 
             # Run evaluation and store the results in the history
             start = timer()
