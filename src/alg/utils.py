@@ -28,32 +28,44 @@ def cosine_similarity(input, alpha=0.5, asym=True, h=0., knn=np.inf, qfunc=None,
         underlying type on which to operate
     """
     
-    # Compute similarity matrix
-    s = (input.T * input).tocsr()
-    
     # Calc norm factors
-    norms = input.sum(axis=0).A.ravel()
-    if asym:
-        assert 0. <= alpha <= 1., "alpha should be a number between 0 and 1"
-        norm_factors = np.outer(
-            np.power(norms, alpha, dtype=dtype),
-            np.power(norms, 1 - alpha, dtype=dtype)
-        ) + h
+    norms = input.sum(axis=0).A.ravel().astype(dtype)
 
+    if (not asym or alpha == 0.5) and h == 0:
+        # If matrix is symmetric and h is zero
+        # this optimization makes it a lot faster
+        # and much more memory-friendly
+        norm_input = input * sp.diags(np.divide(
+            1,
+            np.power(norms, alpha, out=norms, dtype=dtype),
+            out=norms,
+            where=norms != 0,
+            dtype=dtype
+        ), format="csr", dtype=dtype)
+
+        # Compute similarity matrix
+        s = (norm_input.T * norm_input)
+    
     else:
-        norms = np.power(norms, alpha, dtype=dtype)
-        norm_factors = np.outer(norms, norms) + h
+        # Compute similarity matrix
+        s = (input.T * input).tocsr()
 
-    # Calculate inverse and normalize
-    norm_factors = np.divide(1, norm_factors, out=norm_factors, where=norm_factors != 0, dtype=dtype)
-    s = s.multiply(norm_factors).tocsr()
-    del norms
-    del norm_factors
+        if asym:
+            assert 0. <= alpha <= 1., "alpha should be a number between 0 and 1"
+            norm_factors = np.outer(
+                np.power(norms, alpha, dtype=dtype),
+                np.power(norms, 1 - alpha, dtype=dtype)
+            ) + h
 
-    # Finally apply qfunc on the individual weights
-    if qfunc:
-        qfunc = np.vectorize(qfunc)
-        s.data = qfunc(s.data)
+        else:
+            norms = np.power(norms, alpha, dtype=dtype)
+            norm_factors = np.outer(norms, norms) + h
+
+        # Calculate inverse and normalize
+        norm_factors = np.divide(1, norm_factors, out=norm_factors, where=norm_factors != 0, dtype=dtype)
+        s = s.multiply(norm_factors).tocsr()
+        del norms
+        del norm_factors
 
     # KNN
     if knn != np.inf:
@@ -73,6 +85,14 @@ def cosine_similarity(input, alpha=0.5, asym=True, h=0., knn=np.inf, qfunc=None,
                 # The result is not an actual sparse matrix but it's insanely fast
                 discard = np.argpartition(row_data, -knn)[:-knn] + row_start
                 s.data[discard] = 0
+            
+        # Recompute sparsity
+        s = recompute_sparsity(s)
+
+    # Finally apply qfunc on the individual weights
+    if qfunc:
+        qfunc = np.vectorize(qfunc)
+        s.data = qfunc(s.data)
     
     # Return computed similarity matrix
     return s
@@ -234,3 +254,43 @@ def predict(ratings, targets=None, k=10, mask=None, invert_mask=False):
 
     # Return predictions
     return preds
+
+
+def recompute_sparsity(mat):
+    """
+    Recompute the sparsity of a sparse matrix (i.e. remove zero elements)
+    Future operations can benefit from this
+
+    Parameters:
+    mat : sparse matrix
+        input matrix to recompute
+    """
+
+    # Use a csr matrix
+    if not isinstance(mat, sp.csr_matrix):
+        mat = mat.tocsr()
+
+    # First extract indices of non-zero elements
+    data_i = mat.data.nonzero()[0]
+    data = mat.data[data_i]
+
+    # Extract column indices of non-zero elements
+    indices = mat.indices[data_i]
+
+    # Update indptr offsets
+    indptr = [0]
+    for row_i in range(mat.shape[0]):
+        # Row start and end
+        row_start = mat.indptr[row_i]
+        row_end = mat.indptr[row_i + 1]
+
+        # Push number of non-zero elements
+        num_nonzero = np.count_nonzero(mat.data[row_start:row_end])
+        indptr.append(indptr[row_i] + num_nonzero)
+    
+    # Rebuild matrix
+    return sp.csr_matrix((
+        data,
+        indices,
+        indptr
+    ), shape=mat.shape)
