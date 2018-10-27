@@ -6,6 +6,7 @@ cache
 /data/processed
 submissions
 temp/
+tuned
 
 # Sync app folders
 .bitpocket

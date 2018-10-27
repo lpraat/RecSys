@@ -1,10 +1,14 @@
+from random import shuffle
+
 import numpy as np
 from timeit import default_timer as timer
 import itertools
 import pprint
+import os
 
+# TODO add some docs
+from src.const import tune_path
 
-# TODO add some docs and tests
 
 class Callable:
     def __init__(self, obj, args=None, kwargs=None):
@@ -23,8 +27,8 @@ class Hyperparameter:
         self.value = np.random.choice(self.interval)
 
 
-# TODO Wrap this in function which automatically creates a pool to run multiple evaluation in parallel
-def hyperparameter_search(callable_model, hyperparameters, cartesian_product=False):
+def hyperparameter_search(callable_model, hyperparameters, cartesian_product=False, write_to_file=True,
+                          max_resample=1000):
     def is_callable(entity):
         return isinstance(entity, Callable)
 
@@ -91,35 +95,85 @@ def hyperparameter_search(callable_model, hyperparameters, cartesian_product=Fal
 
         return callable_thing.obj(*args, **kwargs)
 
-    def get_new_samples():
+    def new_random_samples():
         for h in hyperparameters:
             h.random_sample()
-        return (h.value for h in hyperparameters)
+        return tuple(h.value for h in hyperparameters)
+
+    def new_product_samples(product):
+        for i, h_value in enumerate(product):
+            hyperparameters[i].value = h_value
+        return tuple(h.value for h in hyperparameters)
+
+    def write_history(filename, history):
+        if filename:
+            print("Writing to file results ...")
+            with open(tune_path + "/" + filename, "a") as f:
+                for k, v in history.items():
+                    s_map = "{:.5f}".format(v)
+                    f.write(",".join(str(el) for el in k) + "," + s_map)
+                    f.write("\n")
+
+    assert len(hyperparameters) > 0, "You must specify the hyperparameters to search for"
+
+    cartesian_products = None
+    if cartesian_product:
+
+        if len(hyperparameters) == 1:
+            print("Cartesian product search needs atleast 2 hyperparameters!")
+            return
+
+        cartesian_products = list(itertools.product(*[h.interval for h in hyperparameters]))
+        shuffle(cartesian_products)
+
+    # Create file to write if write_to_file is set
+    file_name = None
+    if write_to_file:
+        print("Preparing file where tuning results will be written ...")
+        h_names = ",".join(h.name for h in hyperparameters)
+        file_name = h_names + "@pid" + str(os.getpid()) + ".csv"
+
+        with open(tune_path + "/" + file_name, "w") as f:
+            f.write(h_names + "," + "MAP@10\n")
 
     # Dict to store the results obtained for different combination for hyperparameters
     # Key -> Tuple(h1, h2, ..., hn) where hi is the ith hyperparameter value -> MAP@K
     history = dict()
+    resample_try = 0
 
     try:
         while True:
             # Sample new hyperparameters from their intervals for a new run
-
             if cartesian_product:
-                # Sample from the cartesian products
-                cartesian_products = list(itertools.product(h.intervals for h in hyperparameters))
-                new_hyperparameters = cartesian_products.pop()
 
                 # We checked all the possible values
                 if not cartesian_products:
-                    # Print the history on multiple lines, where each line is a key, value entry
                     print("Exhausted all possible combinations, printing results ...")
                     pprint.pprint(history, width=1)
+                    write_history(file_name, history)
+                    return
+
+                new_product = cartesian_products.pop()
+                new_hyperparameters = new_product_samples(new_product)
 
             else:
                 # Randomly sample from the hyperparameters intervals
-                new_hyperparameters = get_new_samples()
+                # If we can't find a new combination, just terminate
+                new_hyperparameters = new_random_samples()
                 while new_hyperparameters in history:
-                    new_hyperparameters = get_new_samples()
+                    # Try to find a combination not already evaluated
+                    resample_try += 1
+
+                    if resample_try == max_resample:
+                        # We probably exhausted all the combinations in the search space
+                        print("Interrupted tuning because of max resample, printing results ...")
+                        pprint.pprint(history, width=1)
+                        write_history(file_name, history)
+                        return
+
+                    new_hyperparameters = new_random_samples()
+
+                resample_try = 0
 
             # Run evaluation and store the results in the history
             start = timer()
@@ -136,3 +190,4 @@ def hyperparameter_search(callable_model, hyperparameters, cartesian_product=Fal
     except KeyboardInterrupt:
         print("Interrupted tuning, printing results ...")
         pprint.pprint(history, width=1)
+        write_history(file_name, history)
