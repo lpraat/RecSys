@@ -270,6 +270,7 @@ class HyperparameterTuner:
         return tuple(h.value for h in self.hyperparameters)
 
     def create_history_file(self):
+        os.makedirs(tune_path, exist_ok=True)
         print("Preparing file where tuning results will be written ...")
         h_names = ",".join(h.name for h in self.hyperparameters)
         self.file_name = h_names + "@pid" + str(os.getpid()) + ".csv"
