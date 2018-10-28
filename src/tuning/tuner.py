@@ -61,14 +61,14 @@ class HyperparameterTuner:
         Otherwise search is performed by sampling randomly in hyperparameters search space.
     cartesian_products : list
         All the possible combinations of hyperparameter values when considering cartesian products.
-    max_resample : function or class
+    max_resample : int
         Maximum number of resampling performed in a sampling iteration from the search space when not
         considering cartesian products.
     resample_try : int
         Number of resample done in a sampling iteration from the search space when not considering cartesian
         products.
     file_name : str
-        File name where the results will be written.
+        Name of the file where the results will be written.
     hyperparameters : list
         Hyperparameters to be tuned.
     parse_hyperparam : bool
@@ -78,7 +78,7 @@ class HyperparameterTuner:
 
     """
     def __init__(self, callable_model, cartesian_product=False, write_to_file=True, max_resample=1000):
-        """Main constructor
+        """Main constructor.
 
         Parameters
         ---------------
@@ -89,8 +89,8 @@ class HyperparameterTuner:
         write_to_file : bool
             Whether to write on file or not the tuning results.
         max_resample : integer
-            Number of resample done in a sampling iteration from the search space when not considering cartesian
-            products.
+            Maximum number of resampling performed in a sampling iteration from the search space when not
+            considering cartesian products.
         """
         self.callable_model = callable_model
         self.cartesian_product = cartesian_product
@@ -135,16 +135,44 @@ class HyperparameterTuner:
     def is_sequence(obj):
         return isinstance(obj, list) or isinstance(obj, tuple) or isinstance(obj, dict)
 
-    def check_hyperparameter(self, el):
+    def parse_hyperparameter(self, el):
+        """
+        Parses an element which is not a callable nor a seq to check if it is a hyperparamter.
+
+        Parameters
+        ---------------
+        el : object (not Callable nor seq)
+            The callable to be parsed.
+
+        Returns
+        -------
+        object (not Callable nor seq9
+            New parsed element.
+        """
         if isinstance(el, Hyperparameter):
             if self.parse_hyperparam:
+                # We are parsing hyperparameter for the first time
                 self.hyperparameters.append(el)
             else:
+                # We are parsing to substitute hyperparameter with the new value
                 return el.value
         else:
             return el
 
     def parse_callable(self, callable_thing):
+        """
+        Parses a callable for hyperparameters.
+
+        Parameters
+        ---------------
+        callable_model : Callable
+            The callable to be parsed.
+
+        Returns
+        -------
+        Callable
+            New parsed callable.
+        """
         args = []
         if callable_thing.args:
             for arg in callable_thing.args:
@@ -154,7 +182,7 @@ class HyperparameterTuner:
                 if self.is_sequence(arg):
                     args.append(self.parse_sequence(arg))
                 else:
-                    args.append(self.check_hyperparameter(arg))
+                    args.append(self.parse_hyperparameter(arg))
 
         kwargs = dict()
         if callable_thing.kwargs:
@@ -165,11 +193,24 @@ class HyperparameterTuner:
                 elif self.is_sequence(v):
                     kwargs.update({k: self.parse_sequence(v)})
                 else:
-                    kwargs.update({k: self.check_hyperparameter(v)})
+                    kwargs.update({k: self.parse_hyperparameter(v)})
 
         return callable_thing.obj(*args, **kwargs)
 
     def parse_sequence(self, seq):
+        """
+        Parses a sequence for hyperparameters.
+
+        Parameters
+        ---------------
+        seq : list or tuple or dict
+            The sequence ot be parsed.
+
+        Returns
+        -------
+        seq
+            New parsed sequence.
+        """
         if isinstance(seq, list) or isinstance(seq, tuple):
 
             # Treat both list and tuples as lists
@@ -181,7 +222,7 @@ class HyperparameterTuner:
 
                     new_seq.append(self.parse_sequence(el))
                 else:
-                    new_seq.append(self.check_hyperparameter(el))
+                    new_seq.append(self.parse_hyperparameter(el))
 
             return new_seq
         else:  # it is a dict
@@ -193,16 +234,37 @@ class HyperparameterTuner:
                 elif self.is_sequence(v):
                     new_d.update({k: self.parse_callable(v)})
                 else:
-                    new_d.update({k: self.check_hyperparameter(v)})
+                    new_d.update({k: self.parse_hyperparameter(v)})
 
             return new_d
 
     def new_random_samples(self):
+        """
+        Update and return new values for the hyperparameters by random sampling from their intervals.
+
+        Returns
+        -------
+        tuple
+            New hyperparameters values.
+        """
         for h in self.hyperparameters:
             h.random_sample()
         return tuple(h.value for h in self.hyperparameters)
 
     def new_product_samples(self, product):
+        """
+        Update and return new values for the hyperparameters using a given product.
+
+        Parameters
+        ---------------
+        product : tuple
+            Values for each hyperparameter.
+
+        Returns
+        -------
+        tuple
+            New hyperparameters values.
+        """
         for i, h_value in enumerate(product):
             self.hyperparameters[i].value = h_value
         return tuple(h.value for h in self.hyperparameters)
@@ -230,7 +292,6 @@ class HyperparameterTuner:
     def run(self):
         try:
             while True:
-                # Sample new hyperparameters from their intervals for a new run
                 if self.cartesian_product:
 
                     # We checked all the possible values
@@ -240,6 +301,7 @@ class HyperparameterTuner:
                         self.write_history()
                         return
 
+                    # Sample new hyperparameter values from their products
                     new_product = self.cartesian_products.pop()
                     new_hyperparameters = self.new_product_samples(new_product)
 
