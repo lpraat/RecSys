@@ -2,8 +2,6 @@
 This file contains the Ensemble recommender which combines different models.
 """
 
-from timeit import default_timer as timer
-
 import numpy as np
 import scipy.sparse as sp
 from timeit import default_timer as timer
@@ -20,7 +18,7 @@ class Ensemble(RecSys):
     models according to a defined distribution.
     """
 
-    def __init__(self, *models):
+    def __init__(self, *models, method="combining"):
         """
         Constructor
         
@@ -35,13 +33,37 @@ class Ensemble(RecSys):
 
         # Initial values
         self.models = models
-    
+        self.method = method
 
-    def rate(self, dataset):
+    def run(self, dataset=None, targets=None, k=10):
 
-        # Compute combined ratings
-        ratings = sp.csr_matrix(dataset.shape, dtype=np.float32)
-        for model, w in self.models:
-            ratings += model.rate(dataset) * w
+        # Run each model
+        ensemble_preds = []
+        for model in self.models:
+            ensemble_preds.append(model.run(dataset=dataset, targets=targets, k=k))
+
+        if self.method == "combining":
+            n = len(self.models)
+            # Sanity check
+            assert n <= k, "too many models for 'combining' method (max. {})".format(k)
+
+            print("combining results ...")
+            start = timer()
+            # Combining list predictions
+            preds = []
+            for t in range(len(ensemble_preds[0])):
+                pred = []
+                i = 0
+                while i < k:
+                    # Get prediction from i-th model
+                    pred.append(ensemble_preds[i % n][t][1][i // n])
+                    i += 1
+
+                #print("{}, {}, {}".format(i, k, ensemble_preds[0][t][0]))
+                preds.append((ensemble_preds[0][t][0], pred))
+            print("elapsed time: {:.3f}\n".format(timer() - start))
+            
+            return preds
         
-        return ratings
+        else:
+            raise NotImplementedError("method '{}' not implemented".format(self.method))
