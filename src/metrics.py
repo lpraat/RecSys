@@ -15,6 +15,11 @@ def ap_at_k(preds, targets, k=10):
         Target (true) values.
     k : int, optional
         K in the MAP@K.
+
+    Returns
+    -------
+    float
+        AP@K.
     """
     hits = 0.
     acc = 0.
@@ -40,6 +45,11 @@ def evaluate(preds, targets, k=10):
          Target (true) values for every playlist.
      k : int, optional
          The K in the MAP@K.
+
+     Returns
+     -------
+     float
+        MAP@K.
      """
 
     ap = 0

@@ -18,3 +18,4 @@ NUM_INTERACTIONS = 1211791
 # Paths
 data_path = os.path.dirname(os.path.realpath(__file__)) + "/../data"
 cache_path = os.path.dirname(os.path.realpath(__file__)) + "/../cache"
+tune_path = os.path.dirname(os.path.realpath(__file__)) + "/../tuned"
