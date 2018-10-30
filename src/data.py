@@ -7,6 +7,7 @@ import math
 import os
 import pickle
 import random
+import numpy as np
 from timeit import default_timer as timer
 
 from src.const import cache_path, NUM_PLAYLIST
@@ -189,7 +190,8 @@ class Cache:
             "test_set": test_set,
             "album_set": album_set,
             "artist_set": artist_set,
-            "targets": targets
+            "targets": targets,
+            "top_pop": np.array([ 2272, 18266, 13980,  2674, 17239, 10496, 15578,  5606, 10848, 8956])
         })
 
     def fetch(self, key):

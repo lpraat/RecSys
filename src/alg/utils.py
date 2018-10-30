@@ -230,7 +230,7 @@ def predict(ratings, targets=None, k=10, mask=None, invert_mask=False):
     # Compute individually for each user
     preds = []
     for ui in targets:
-        # Get row
+        # Get rows
         ratings_i_start = ratings.indptr[ui]
         ratings_i_end = ratings.indptr[ui + 1]
         ratings_i_data = ratings.data[ratings_i_start:ratings_i_end]
@@ -251,17 +251,20 @@ def predict(ratings, targets=None, k=10, mask=None, invert_mask=False):
         # in the number of non-zero items if k << number of nnz
         # ------------------------------------
         # Complexity: O(len(nnz) + k log(k))
-        if len(ratings_i_data) > k:
+        if len(ratings_i_indices) > k:
             top_idxs = np.argpartition(ratings_i_data, -k)[-k:]
-            ratings_i_indices = ratings_i_indices[top_idxs]
+            items_i = ratings_i_indices[top_idxs]
             sort_idxs = np.argsort(-ratings_i_data[top_idxs])
         else:
-            ratings_i_data.resize(k)
-            ratings_i_indices.resize(k)
-            sort_idxs = np.argsort(-ratings_i_data)
+            # @todo hardcoded, not very elegant but it works
+            top_pop = np.array([ 2272, 18266, 13980,  2674, 17239, 10496, 15578,  5606, 10848, 8956])
+            delta = k - len(ratings_i_indices)
+            items_i = np.append(ratings_i_indices, top_pop[np.in1d(top_pop, ratings_i_indices, assume_unique=True, invert=True)])
+            ratings_i = np.append(ratings_i_data, np.zeros(delta, dtype=np.float32))
+            sort_idxs = np.argsort(-ratings_i)
 
         # Add to list
-        preds.append((ui, list(ratings_i_indices[sort_idxs])))
+        preds.append((ui, list(np.resize(items_i[sort_idxs], k))))
 
     # Return predictions
     return preds

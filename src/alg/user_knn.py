@@ -20,7 +20,6 @@ class UserKNN(RecSys):
     Recommends base on the similarity between users
     """
 
-
     def __init__(self, alpha=0.5, asym=True, knn=np.inf, h=0, qfunc=None):
         """
         Constructor
@@ -48,7 +47,6 @@ class UserKNN(RecSys):
         self.h = np.float32(h)
         self.qfunc = qfunc
         self.knn = knn
-    
     
     def rate(self, dataset):
 

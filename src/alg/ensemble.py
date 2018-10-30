@@ -54,12 +54,13 @@ class Ensemble(RecSys):
             for t in range(len(ensemble_preds[0])):
                 pred = []
                 i = 0
-                while i < k:
+                while len(pred) < k:
                     # Get prediction from i-th model
-                    pred.append(ensemble_preds[i % n][t][1][i // n])
+                    item = ensemble_preds[i % n][t][1][i // n]
+                    if item not in pred:
+                        pred.append(item)
                     i += 1
 
-                #print("{}, {}, {}".format(i, k, ensemble_preds[0][t][0]))
                 preds.append((ensemble_preds[0][t][0], pred))
             print("elapsed time: {:.3f}\n".format(timer() - start))
             
