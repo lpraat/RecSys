@@ -19,3 +19,8 @@ env
 # Editors ---------------------------------------
 .vscode
 .idea
+
+# Personal runfiles -----------------------------
+#| This files are different from user to user |#
+/src/run.py
+/src/tuning/tune.py
