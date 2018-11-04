@@ -6,6 +6,8 @@ class BPRSampler:
         self.urm = urm.tocsr()
         self.lil_urm = urm.tolil()
 
+        # TODO add user seen items dict instead of keeping LIL
+
     def sample(self):
 
         # Get a random user and its interactions
@@ -19,17 +21,15 @@ class BPRSampler:
         negative_item = np.random.choice(self.urm.shape[1])
 
         # Use lil fast access property to speed up this re-try
+        # TODO USE HERE USER SEEN ITEMS INSTEAD FOR FAST SAMPLING
         while self.lil_urm[user, negative_item] == 1:
             negative_item = np.random.choice(self.urm.shape[1])
 
-        return np.array([user, positive_item, negative_item], dtype=np.int16), user_interactions
+        return np.array([user, positive_item, negative_item], dtype=np.int32)
 
     def sample_batch(self, batch_size):
         batch = np.zeros((batch_size, 3), dtype=np.int16)
-        user_indices = []
         for i in range(batch_size):
-            triplet, interactions = self.sample()
-            batch[i] = triplet
-            user_indices.append(interactions)
+            batch[i] = self.sample()
 
-        return batch, user_indices
+        return batch

@@ -19,6 +19,7 @@ class Slim(RecSys):
 
         # Similarity matrix slim is trying to learn
         self.slim_matrix = np.zeros((self.num_items, self.num_items), dtype=np.float32)
+        self.mask = np.full((self.num_items, self.num_items), False)
 
         self.bpr_sampler = BPRSampler(self.urm)
 
@@ -27,62 +28,81 @@ class Slim(RecSys):
         pass
 
     def build_batches(self, batch_size):
-        batches_and_user_indices = []
+
+        assert batch_size <= self.num_interactions, "Batch size is too big"
+        batches = []
         full_batches = self.num_interactions // batch_size
 
-        for _ in range(full_batches):
-            batch, indices = self.bpr_sampler.sample_batch(batch_size)
-            batches_and_user_indices.append((batch, indices))
+        for i in range(full_batches):
+            batches.append(self.bpr_sampler.sample_batch(batch_size))
 
         need_fill = self.num_interactions % batch_size
         if need_fill:
-            batch, indices = self.bpr_sampler.sample_batch(need_fill)
-            batches_and_user_indices.append((batch, indices))
+            batches.append(self.bpr_sampler.sample_batch(need_fill))
 
-        return batches_and_user_indices
+        return batches
 
     def train(self, lr, batch_size, num_epochs):
+
+        # TODO
+        # if batch size == 1 then sgd
+        # else                    mgd
         for i in range(num_epochs):
             batches = self.build_batches(batch_size)
 
-            for batch, user_indices in batches:
+            for batch in batches:
+                # TODO remove this
+                t = time.time()
                 u = batch[:, 0]
                 i = batch[:, 1]
                 j = batch[:, 2]
                 m = batch.shape[0]
 
                 # Get current prediction
-                x_ui = self.slim_matrix[i[:, None], user_indices].sum(axis=1)
-                x_uj = self.slim_matrix[j[:, None], user_indices].sum(axis=1)
+
+                # TODO benchmark this vs the other for different small batch sizes
+
+                # This is slower for larger batch size > 64
+                '''
+                x_ui = self.slim_matrix[i]
+                x_uj = self.slim_matrix[j]
+                x_uij = x_ui - x_uj
+                x_uij = self.urm[u, :].dot(x_uij.T).diagonal()
+                '''
+
+                x_ui = self.urm[u, :].multiply(self.slim_matrix[i]).sum(axis=1)
+                x_uj = self.urm[u, :].multiply(self.slim_matrix[j]).sum(axis=1)
+
+                # The difference is computed on the user_seen items
                 x_uij = x_ui - x_uj
 
+                # TODO add verbose mode every tot iterations
                 # Get current loss
-                loss = self.loss(x_ui, x_uj, x_uij, m)
-                print(f"Current loss is {loss}")
+                #loss = self.loss(x_ui, x_uj, x_uij, m)
+                #print(f"Current loss is {loss}")
 
-                # Compute gradient of log(sigmoid(x_uij))
+                # Compute gradient of 1/m * log(sigmoid(x_uij))
                 gradient = np.sum(1 / (1 + np.exp(x_uij))) / m
+
+                # Update only items corresponding to users in this batch
                 items_to_update = self.urm[u, :].sum(axis=0).A > 0
 
                 # Compute overall gradient considering also regularization part
-                x_ui_grad, x_uj_grad = self.compute_param_gradients(gradient, x_ui, x_uj, m)
+                x_ui_grad = - gradient + self.lambda_i * (x_ui.sum() / m)
+                x_uj_grad = + gradient + self.lambda_j * (x_uj.sum() / m)
 
                 # Compute gradients and update parameters
                 # Update x_ui parameter
-                self.slim_matrix[i] += lr * x_ui_grad * items_to_update
+                self.slim_matrix[i] -= lr * x_ui_grad * items_to_update
                 self.slim_matrix[i, i] = 0
 
                 # Update x_uj parameter
-                self.slim_matrix[j] += lr * x_uj_grad * items_to_update
+                self.slim_matrix[j] -= lr * x_uj_grad * items_to_update
                 self.slim_matrix[j, j] = 0
-
-    def compute_param_gradients(self, gradient, x_ui, x_uj, m):
-        x_ui_grad = gradient + self.lambda_i * (x_ui.sum() / m)
-        x_uj_grad = - gradient + self.lambda_j * (x_uj.sum() / m)
-        return x_ui_grad, x_uj_grad
+                print("TIme " + str(time.time() - t))
 
     def loss(self, x_ui, x_uj, x_uij, m):
-        loss = (1 / m) * np.sum(np.log(1 / (1 + np.exp(-x_uij))))
-        reg = (0.5 * m) * (self.lambda_i * (LA.norm(x_ui) ** 2) + self.lambda_j * (LA.norm(x_uj) ** 2))
+        loss = - (1 / m) * np.sum(np.log(1 / (1 + np.exp(-x_uij))))
+        reg = (0.5 / m) * (self.lambda_i * (LA.norm(x_ui) ** 2) + self.lambda_j * (LA.norm(x_uj) ** 2))
 
-        return -loss + reg
+        return loss + reg
