@@ -42,6 +42,9 @@ class Ensemble(RecSys):
         # Compute combined ratings
         ratings = sp.csr_matrix(dataset.shape, dtype=np.float32)
         for model, w in self.models:
-            ratings += model.rate(dataset) * w
+            model_ratings = model.rate(dataset)
+            normalized_ratings = model_ratings.multiply(1/model_ratings.max())
+            del model_ratings
+            ratings += normalized_ratings * w
         
         return ratings

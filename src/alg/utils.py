@@ -97,6 +97,15 @@ def cosine_similarity(input, alpha=0.5, asym=True, h=0., knn=np.inf, qfunc=None,
     # Return computed similarity matrix
     return s
 
+# todo
+def knn(s, knn=np.inf):
+
+    if knn != np.inf:
+        discard = np.argpartition(s, -knn, axis=1)[:, :-knn]
+        s[np.arange(s.shape[0])[:, None], discard] = 0
+    return sp.csr_matrix(s)
+
+
 
 def clusterize(input, s=None, k=8):
     """

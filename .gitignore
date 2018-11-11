@@ -7,6 +7,7 @@ cache
 submissions
 temp/
 tuned
+*.pyc
 
 # Sync app folders
 .bitpocket

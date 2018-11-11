@@ -4,9 +4,9 @@ import numpy as np
 class BPRSampler:
     def __init__(self, urm):
         self.urm = urm.tocsr()
-        self.lil_urm = urm.tolil()
 
-        # TODO add user seen items dict instead of keeping LIL
+        # todo maybe using a dict here is better?
+        self.lil_urm = urm.tolil()
 
     def sample(self):
 
@@ -21,14 +21,13 @@ class BPRSampler:
         negative_item = np.random.choice(self.urm.shape[1])
 
         # Use lil fast access property to speed up this re-try
-        # TODO USE HERE USER SEEN ITEMS INSTEAD FOR FAST SAMPLING
         while self.lil_urm[user, negative_item] == 1:
             negative_item = np.random.choice(self.urm.shape[1])
 
         return np.array([user, positive_item, negative_item], dtype=np.int32)
 
     def sample_batch(self, batch_size):
-        batch = np.zeros((batch_size, 3), dtype=np.int16)
+        batch = np.zeros((batch_size, 3), dtype=np.uint16)
         for i in range(batch_size):
             batch[i] = self.sample()
 
