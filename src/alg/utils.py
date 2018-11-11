@@ -235,31 +235,45 @@ def predict(ratings, targets=None, k=10, mask=None, invert_mask=False):
     # Convert to csr for fast row access
     mask = mask.tocsr()
     ratings = ratings.tocsr()
-
-    # Apply mask
-    if mask is not None and not invert_mask:
-        ratings = ratings.multiply(mask).tocsr()
     
     # Compute individually for each user
     preds = []
     for ui in targets:
-        # Get row
-        ratings_i = ratings.getrow(ui).A.ravel()
+        # Get rows
+        ratings_i_start = ratings.indptr[ui]
+        ratings_i_end = ratings.indptr[ui + 1]
+        ratings_i_data = ratings.data[ratings_i_start:ratings_i_end]
+        ratings_i_indices = ratings.indices[ratings_i_start:ratings_i_end]
 
-        if mask is not None and invert_mask:
+        if mask is not None:
             # Apply inverted mask
-            ratings_i = ratings_i * (1 - mask.getrow(ui).A.ravel())
+            mask_i_start = mask.indptr[ui]
+            mask_i_end = mask.indptr[ui + 1]
+            mask_i_indices = mask.indices[mask_i_start:mask_i_end]
+
+            masked_i = np.in1d(ratings_i_indices, mask_i_indices, assume_unique=True, invert=invert_mask)
+            ratings_i_data = ratings_i_data[masked_i]
+            ratings_i_indices = ratings_i_indices[masked_i]
 
         # Compute top k items
         # Using argpartition the complexity is linear
-        # in the number of items if k << number of items
+        # in the number of non-zero items if k << number of nnz
         # ------------------------------------
-        # Complexity: O(len(items) + k log(k))
-        top_idxs = np.argpartition(ratings_i, -k)[-k:]
-        sort_idxs = np.argsort(-ratings_i[top_idxs])
+        # Complexity: O(len(nnz) + k log(k))
+        if len(ratings_i_indices) > k:
+            top_idxs = np.argpartition(ratings_i_data, -k)[-k:]
+            items_i = ratings_i_indices[top_idxs]
+            sort_idxs = np.argsort(-ratings_i_data[top_idxs])
+        else:
+            # @todo hardcoded, not very elegant but it works
+            top_pop = np.array([ 2272, 18266, 13980,  2674, 17239, 10496, 15578,  5606, 10848, 8956])
+            delta = k - len(ratings_i_indices)
+            items_i = np.append(ratings_i_indices, top_pop[np.in1d(top_pop, ratings_i_indices, assume_unique=True, invert=True)])
+            ratings_i = np.append(ratings_i_data, np.zeros(delta, dtype=np.float32))
+            sort_idxs = np.argsort(-ratings_i)
 
         # Add to list
-        preds.append((ui, list(top_idxs[sort_idxs])))
+        preds.append((ui, list(np.resize(items_i[sort_idxs], k))))
 
     # Return predictions
     return preds
