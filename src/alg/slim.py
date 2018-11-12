@@ -42,7 +42,6 @@ class Slim(RecSys):
         knn_slim_similarity = knn(self.slim_matrix.T)
         print("elapsed: {:.3f}s\n".format(time.time() - start))
 
-        print(knn_slim_similarity)
         print("Computing Slim ratings")
         start = time.time()
         ratings = (dataset * knn_slim_similarity).tocsr()
@@ -102,6 +101,7 @@ class Slim(RecSys):
                 gradient + (self.lambda_j * self.slim_matrix[j, user_indices]))
                 self.slim_matrix[j, j] = 0
                 # print("TIme " + str(time.time() - t))
+            del batches
 
     def train(self, lr, batch_size, num_epochs):
         if batch_size == 1:
