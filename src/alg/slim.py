@@ -5,17 +5,28 @@ from src.alg import ItemKNN
 from src.alg.bpr import BPRSampler
 from src.alg.recsys import RecSys
 from numpy.linalg import linalg as LA
+from scipy.special import expit
 
 from src.alg.utils import knn
 
 
 class Slim(RecSys):
-    def __init__(self, lr=0.01, batch_size=1, epochs=1, lambda_i=0, lambda_j=0, knn=100):
+    def __init__(self, all_dataset, lr=0.01, batch_size=1, epochs=1, lambda_i=0, lambda_j=0, knn=100, dual=False):
         super().__init__()
-        self.urm = self.cache.fetch("train_set").tocsr()
+
+        self.dual = dual
+
+        if all_dataset:
+            urm = self.cache.fetch("interactions")
+        else:
+            urm = self.cache.fetch("train_set")
+
+        self.urm = urm.tocsr()
         self.num_interactions = self.urm.nnz
-        self.num_users = self.urm.shape[0]
-        self.num_items = self.urm.shape[1]
+        self.urm = self.urm.T if self.dual else self.urm
+
+        slim_dim = self.urm.shape[1]
+        self.slim_matrix = np.zeros((slim_dim, slim_dim), dtype=np.float32)
 
         self.lambda_i = lambda_i
         self.lambda_j = lambda_j
@@ -27,7 +38,6 @@ class Slim(RecSys):
         self.knn = knn
 
         # Similarity matrix slim is trying to learn
-        self.slim_matrix = np.zeros((self.num_items, self.num_items), dtype=np.float32)
         self.bpr_sampler = BPRSampler(self.urm)
 
     def rate(self, dataset=None):
@@ -39,15 +49,22 @@ class Slim(RecSys):
 
         print("Taking Slim k nearest neighbors")
         start = time.time()
-        knn_slim_similarity = knn(self.slim_matrix.T)
+        knn_slim_similarity = knn(self.slim_matrix)
+
         print("elapsed: {:.3f}s\n".format(time.time() - start))
+
 
         print("Computing Slim ratings")
         start = time.time()
-        ratings = (dataset * knn_slim_similarity).tocsr()
+
+        if self.dual:
+            ratings = (dataset.T * knn_slim_similarity).tocsr()
+        else:
+            ratings = (dataset * knn_slim_similarity).tocsr()
         print("elapsed: {:.3f}s\n".format(time.time() - start))
 
-        return ratings
+        # todo if dual
+        return ratings.T
 
     def build_batches(self, batch_size):
         assert batch_size <= self.num_interactions, "Batch size is too big"
@@ -69,6 +86,8 @@ class Slim(RecSys):
 
             print(f"Sampling for epoch {i+1}")
             batches = self.build_batches(1)
+
+            print(batches[0])
             print(f"Started epoch {i+1}")
 
             for batch in batches:
@@ -82,10 +101,12 @@ class Slim(RecSys):
                 # Get current prediction
                 x_ui = self.slim_matrix[i, user_indices]
                 x_uj = self.slim_matrix[j, user_indices]
+
                 x_uij = np.sum(x_ui - x_uj)
 
                 # Compute gradient of log(sigmoid(x_uij))
-                gradient = 1 / (1 + np.exp(x_uij))
+                # Use scipy expit to avoid overflows
+                gradient = 1 / (1 + expit(x_uij))
 
                 # Get current loss
                 # loss = self.loss(x_ui, x_uj, x_uij)
@@ -93,15 +114,14 @@ class Slim(RecSys):
 
                 # Update i parameters
                 self.slim_matrix[i, user_indices] -= lr * (
-                - gradient + (self.lambda_i * self.slim_matrix[i, user_indices]))
+                    - gradient + (self.lambda_i * self.slim_matrix[i, user_indices]))
                 self.slim_matrix[i, i] = 0
 
                 # Update j parameters
                 self.slim_matrix[j, user_indices] -= lr * (
-                gradient + (self.lambda_j * self.slim_matrix[j, user_indices]))
+                    gradient + (self.lambda_j * self.slim_matrix[j, user_indices]))
                 self.slim_matrix[j, j] = 0
                 # print("TIme " + str(time.time() - t))
-            del batches
 
     def train(self, lr, batch_size, num_epochs):
         if batch_size == 1:
@@ -166,7 +186,7 @@ class Slim(RecSys):
                 self.slim_matrix[j, j] = 0
 
     def loss(self, i_param, j_param, x_uij):
-        m = x_uij.shape[0]
+#        m = x_uij.shape[0]
         loss = - (1 / m) * np.sum(np.log(1 / (1 + np.exp(-x_uij))))
         reg = (0.5 / m) * (self.lambda_i * (LA.norm(i_param) ** 2) + self.lambda_j * (LA.norm(j_param) ** 2))
 

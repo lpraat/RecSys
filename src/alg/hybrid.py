@@ -4,10 +4,6 @@ This file contains the Ensemble recommender which combines different models.
 
 import numpy as np
 import scipy.sparse as sp
-from timeit import default_timer as timer
-import gc
-
-from src.metrics import evaluate
 from .recsys import RecSys
 
 
@@ -33,23 +29,29 @@ class Hybrid(RecSys):
         super().__init__()
 
         # Initial values
-        self.models = models
+        self.models = list(models)
         self.normalize = normalize
-    
 
     def rate(self, dataset):
 
+        if not self.models:
+            raise RuntimeError("You already called rate")
+
         # Compute combined ratings
         ratings = sp.csr_matrix(dataset.shape, dtype=np.float32)
-        for model, w in self.models:
+
+        while self.models:
+
+            model, w = self.models.pop()
+
             model_ratings = model.rate(dataset)
             del model
-            gc.collect()
+
             if self.normalize:
                 model_ratings = model_ratings.multiply(1 / model_ratings.max())
+
             model_ratings = model_ratings * w
             ratings += model_ratings
             del model_ratings
-            gc.collect()
-        
+
         return ratings
