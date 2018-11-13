@@ -12,27 +12,11 @@ from src.alg.utils import knn
 
 
 class Slim(RecSys):
-    def __init__(self, all_dataset, lr=0.01, batch_size=1, epochs=1, lambda_i=0, lambda_j=0, knn=100, dual=False):
+    def __init__(self, all_dataset, lr=0.01, batch_size=1, epochs=1, lambda_i=0, lambda_j=0, knn=np.inf, dual=False):
         super().__init__()
 
         self.dual = dual
-
-        if all_dataset:
-            urm = self.cache.fetch("interactions")
-        else:
-            urm = self.cache.fetch("train_set")
-
-        self.urm = urm.tocsr()
-        print(self.urm.indices)
-
-        self.num_interactions = self.urm.nnz
-
-        self.urm = self.urm.T if self.dual else self.urm
-        self.urm = sp.csr_matrix(self.urm)
-
-
-        slim_dim = self.urm.shape[1]
-        self.slim_matrix = np.zeros((slim_dim, slim_dim), dtype=np.float32)
+        self.all_dataset = all_dataset
 
         self.lambda_i = lambda_i
         self.lambda_j = lambda_j
@@ -43,10 +27,26 @@ class Slim(RecSys):
 
         self.knn = knn
 
-        # Similarity matrix slim is trying to learn
+    def rate(self, dataset=None):
+
+        if self.all_dataset:
+            urm = self.cache.fetch("interactions")
+        else:
+            urm = self.cache.fetch("train_set")
+
+        self.urm = urm.tocsr()
+
+        self.num_interactions = self.urm.nnz
+        self.urm = self.urm.T if self.dual else self.urm
+
+        self.urm = sp.csr_matrix(self.urm)
         self.bpr_sampler = BPRSampler(self.urm)
 
-    def rate(self, dataset=None):
+
+        slim_dim = self.urm.shape[1]
+        self.slim_matrix = np.zeros((slim_dim, slim_dim), dtype=np.float32)
+
+        # Similarity matrix slim is trying to learn
 
         print("Training Slim")
         start = time.time()
@@ -55,7 +55,7 @@ class Slim(RecSys):
 
         print("Taking Slim k nearest neighbors")
         start = time.time()
-        knn_slim_similarity = knn(self.slim_matrix.T)
+        knn_slim_similarity = knn(self.slim_matrix.T, knn=self.knn)
 
         print("elapsed: {:.3f}s\n".format(time.time() - start))
 
@@ -109,7 +109,7 @@ class Slim(RecSys):
                 x_ui = self.slim_matrix[i, user_indices]
                 x_uj = self.slim_matrix[j, user_indices]
 
-                x_uij = np.sum(x_uj - x_ui)
+                x_uij = np.sum(x_ui - x_uj)
 
                 # Compute gradient of log(sigmoid(x_uij))
                 # gradient = expit(-x_uij)
@@ -192,7 +192,7 @@ class Slim(RecSys):
                 self.slim_matrix[j, j] = 0
 
     def loss(self, i_param, j_param, x_uij):
-#        m = x_uij.shape[0]
+        m = x_uij.shape[0]
         loss = - (1 / m) * np.sum(np.log(1 / (1 + np.exp(-x_uij))))
         reg = (0.5 / m) * (self.lambda_i * (LA.norm(i_param) ** 2) + self.lambda_j * (LA.norm(j_param) ** 2))
 

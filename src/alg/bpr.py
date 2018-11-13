@@ -27,10 +27,10 @@ class BPRSampler:
                 while self.lil_urm[user, negative_item] == 1:
                     negative_item = np.random.choice(self.urm.shape[1])
 
-                return np.array([user, positive_item, negative_item], dtype=np.int32)
+                return np.array([user, positive_item, negative_item], dtype=np.uint32)
 
     def sample_batch(self, batch_size):
-        batch = np.zeros((batch_size, 3), dtype=np.uint16)
+        batch = np.zeros((batch_size, 3), dtype=np.uint32)
         for i in range(batch_size):
             batch[i] = self.sample()
 
