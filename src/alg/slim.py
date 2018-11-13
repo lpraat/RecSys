@@ -6,6 +6,7 @@ from src.alg.bpr import BPRSampler
 from src.alg.recsys import RecSys
 from numpy.linalg import linalg as LA
 from scipy.special import expit
+import scipy.sparse as sp
 
 from src.alg.utils import knn
 
@@ -22,8 +23,13 @@ class Slim(RecSys):
             urm = self.cache.fetch("train_set")
 
         self.urm = urm.tocsr()
+        print(self.urm.indices)
+
         self.num_interactions = self.urm.nnz
+
         self.urm = self.urm.T if self.dual else self.urm
+        self.urm = sp.csr_matrix(self.urm)
+
 
         slim_dim = self.urm.shape[1]
         self.slim_matrix = np.zeros((slim_dim, slim_dim), dtype=np.float32)
@@ -49,10 +55,9 @@ class Slim(RecSys):
 
         print("Taking Slim k nearest neighbors")
         start = time.time()
-        knn_slim_similarity = knn(self.slim_matrix)
+        knn_slim_similarity = knn(self.slim_matrix.T)
 
         print("elapsed: {:.3f}s\n".format(time.time() - start))
-
 
         print("Computing Slim ratings")
         start = time.time()
@@ -63,8 +68,10 @@ class Slim(RecSys):
             ratings = (dataset * knn_slim_similarity).tocsr()
         print("elapsed: {:.3f}s\n".format(time.time() - start))
 
-        # todo if dual
-        return ratings.T
+        if self.dual:
+            return ratings.T
+        else:
+            return ratings
 
     def build_batches(self, batch_size):
         assert batch_size <= self.num_interactions, "Batch size is too big"
@@ -102,11 +109,11 @@ class Slim(RecSys):
                 x_ui = self.slim_matrix[i, user_indices]
                 x_uj = self.slim_matrix[j, user_indices]
 
-                x_uij = np.sum(x_ui - x_uj)
+                x_uij = np.sum(x_uj - x_ui)
 
                 # Compute gradient of log(sigmoid(x_uij))
-                # Use scipy expit to avoid overflows
-                gradient = 1 / (1 + expit(x_uij))
+                # gradient = expit(-x_uij)
+                gradient = 1 / (1 + np.exp(x_uij))
 
                 # Get current loss
                 # loss = self.loss(x_ui, x_uj, x_uij)
@@ -121,7 +128,6 @@ class Slim(RecSys):
                 self.slim_matrix[j, user_indices] -= lr * (
                     gradient + (self.lambda_j * self.slim_matrix[j, user_indices]))
                 self.slim_matrix[j, j] = 0
-                # print("TIme " + str(time.time() - t))
 
     def train(self, lr, batch_size, num_epochs):
         if batch_size == 1:
