@@ -99,11 +99,36 @@ def cosine_similarity(input, alpha=0.5, asym=True, h=0., knn=np.inf, qfunc=None,
 
 # todo
 def knn(s, knn=np.inf):
+    s = sp.csr_matrix(s)
+    if knn != np.inf:
+        # For each row
+        for row in range(len(s.indptr) - 1):
+            print(row)
+            # Row offsets
+            row_start = s.indptr[row]
+            row_end = s.indptr[row + 1]
 
+            # Get row data slice
+            row_data = s.data[row_start:row_end]
+
+            if len(row_data) > knn:
+                # Discard not meaningful data
+                # We take the smallest similarities in the data array
+                # and set those data values to 0 using row_start as offset
+                # The result is not an actual sparse matrix but it's insanely fast
+                discard = np.argpartition(row_data, -knn)[:-knn] + row_start
+                s.data[discard] = 0
+
+        # Recompute sparsity
+        s = recompute_sparsity(s)
+    return s
+
+    '''
     if knn != np.inf:
         discard = np.argpartition(s, -knn, axis=1)[:, :-knn]
         s[np.arange(s.shape[0])[:, None], discard] = 0
     return sp.csr_matrix(s)
+    '''
 
 
 
