@@ -42,11 +42,9 @@ class Slim(RecSys):
         self.urm = sp.csr_matrix(self.urm)
         self.bpr_sampler = BPRSampler(self.urm)
 
-
         slim_dim = self.urm.shape[1]
-        self.slim_matrix = np.zeros((slim_dim, slim_dim), dtype=np.float32)
-
         # Similarity matrix slim is trying to learn
+        self.slim_matrix = np.zeros((slim_dim, slim_dim), dtype=np.float32)
 
         print("Training Slim")
         start = time.time()
@@ -93,8 +91,6 @@ class Slim(RecSys):
 
             print(f"Sampling for epoch {i+1}")
             batches = self.build_batches(1)
-
-            print(batches[0])
             print(f"Started epoch {i+1}")
 
             for batch in batches:

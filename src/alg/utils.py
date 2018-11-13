@@ -103,7 +103,6 @@ def knn(s, knn=np.inf):
     if knn != np.inf:
         # For each row
         for row in range(len(s.indptr) - 1):
-            print(row)
             # Row offsets
             row_start = s.indptr[row]
             row_end = s.indptr[row + 1]
@@ -122,14 +121,6 @@ def knn(s, knn=np.inf):
         # Recompute sparsity
         s = recompute_sparsity(s)
     return s
-
-    '''
-    if knn != np.inf:
-        discard = np.argpartition(s, -knn, axis=1)[:, :-knn]
-        s[np.arange(s.shape[0])[:, None], discard] = 0
-    return sp.csr_matrix(s)
-    '''
-
 
 
 def clusterize(input, s=None, k=8):
