@@ -5,7 +5,6 @@ from src.alg import ItemKNN
 from src.alg.bpr import BPRSampler
 from src.alg.recsys import RecSys
 from numpy.linalg import linalg as LA
-from scipy.special import expit
 import scipy.sparse as sp
 
 from src.alg.utils import knn
@@ -27,6 +26,9 @@ class Slim(RecSys):
 
         self.knn = knn
 
+        self.num_interactions = None
+        self.bpr_sampler = None
+
     def rate(self, dataset=None):
 
         if self.all_dataset:
@@ -34,37 +36,37 @@ class Slim(RecSys):
         else:
             urm = self.cache.fetch("train_set")
 
-        self.urm = urm.tocsr()
+        urm = urm.tocsr()
 
-        self.num_interactions = self.urm.nnz
-        self.urm = self.urm.T if self.dual else self.urm
+        self.num_interactions = urm.nnz
+        urm = urm.T if self.dual else urm
 
-        self.urm = sp.csr_matrix(self.urm)
-        self.bpr_sampler = BPRSampler(self.urm)
+        urm = sp.csr_matrix(urm)
+        self.bpr_sampler = BPRSampler(urm)
 
-        slim_dim = self.urm.shape[1]
+        slim_dim = urm.shape[1]
         # Similarity matrix slim is trying to learn
-        self.slim_matrix = np.zeros((slim_dim, slim_dim), dtype=np.float32)
+        slim_matrix = np.zeros((slim_dim, slim_dim), dtype=np.float32)
 
         print("Training Slim")
         start = time.time()
-        self.train(self.lr, self.batch_size, self.epochs)
+        self.train(self.lr, self.batch_size, self.epochs, urm, slim_matrix)
         print("elapsed: {:.3f}s\n".format(time.time() - start))
 
         print("Taking Slim k nearest neighbors")
         start = time.time()
-        knn_slim_similarity = knn(self.slim_matrix.T, knn=self.knn)
+        slim_matrix = knn(slim_matrix.T, knn=self.knn)
 
         print("elapsed: {:.3f}s\n".format(time.time() - start))
 
         print("Computing Slim ratings")
         start = time.time()
-
         if self.dual:
-            ratings = (dataset.T * knn_slim_similarity).tocsr()
+            ratings = (dataset.T * slim_matrix).tocsr()
         else:
-            ratings = (dataset * knn_slim_similarity).tocsr()
+            ratings = (dataset * slim_matrix).tocsr()
         print("elapsed: {:.3f}s\n".format(time.time() - start))
+        del slim_matrix
 
         if self.dual:
             return ratings.T
@@ -76,7 +78,7 @@ class Slim(RecSys):
         batches = []
         full_batches = self.num_interactions // batch_size
 
-        for i in range(full_batches):
+        for _ in range(full_batches):
             batches.append(self.bpr_sampler.sample_batch(batch_size))
 
         need_fill = self.num_interactions % batch_size
@@ -85,7 +87,7 @@ class Slim(RecSys):
 
         return batches
 
-    def sgd(self, lr, num_epochs):
+    def sgd(self, lr, num_epochs, urm, slim_matrix):
 
         for i in range(num_epochs):
 
@@ -94,16 +96,15 @@ class Slim(RecSys):
             print(f"Started epoch {i+1}")
 
             for batch in batches:
-                # t = time.time()
                 u = batch[0][0]
                 i = batch[0][1]
                 j = batch[0][2]
 
-                user_indices = self.urm.indices[self.urm.indptr[u]:self.urm.indptr[u + 1]]
+                user_indices = urm.indices[urm.indptr[u]:urm.indptr[u + 1]]
 
                 # Get current prediction
-                x_ui = self.slim_matrix[i, user_indices]
-                x_uj = self.slim_matrix[j, user_indices]
+                x_ui = slim_matrix[i, user_indices]
+                x_uj = slim_matrix[j, user_indices]
 
                 x_uij = np.sum(x_ui - x_uj)
 
@@ -116,22 +117,22 @@ class Slim(RecSys):
                 # print(f"Current loss is {loss}")
 
                 # Update i parameters
-                self.slim_matrix[i, user_indices] -= lr * (
-                    - gradient + (self.lambda_i * self.slim_matrix[i, user_indices]))
-                self.slim_matrix[i, i] = 0
+                slim_matrix[i, user_indices] -= lr * (
+                    - gradient + (self.lambda_i * slim_matrix[i, user_indices]))
+                slim_matrix[i, i] = 0
 
                 # Update j parameters
-                self.slim_matrix[j, user_indices] -= lr * (
-                    gradient + (self.lambda_j * self.slim_matrix[j, user_indices]))
-                self.slim_matrix[j, j] = 0
+                slim_matrix[j, user_indices] -= lr * (
+                    gradient + (self.lambda_j * slim_matrix[j, user_indices]))
+                slim_matrix[j, j] = 0
 
-    def train(self, lr, batch_size, num_epochs):
+    def train(self, lr, batch_size, num_epochs, urm, slim_matrix):
         if batch_size == 1:
-            self.sgd(lr, num_epochs)
+            self.sgd(lr, num_epochs, urm, slim_matrix)
         else:
-            self.mgd(lr, batch_size, num_epochs)
+            self.mgd(lr, batch_size, num_epochs, urm, slim_matrix)
 
-    def mgd(self, lr, batch_size, num_epochs):
+    def mgd(self, lr, batch_size, num_epochs, urm, slim_matrix):
 
         for i in range(num_epochs):
 
@@ -164,8 +165,8 @@ class Slim(RecSys):
                 # j_param = self.urm[u_j].multiply(self.slim_matrix[j_u]).A
 
                 # Get current prediction
-                x_ui = self.urm[u, :].multiply(self.slim_matrix[i])
-                x_uj = self.urm[u, :].multiply(self.slim_matrix[j])
+                x_ui = urm[u, :].multiply(slim_matrix[i])
+                x_uj = urm[u, :].multiply(slim_matrix[j])
                 x_uij = np.sum(x_ui - x_uj, axis=1)
 
                 # Get current loss
@@ -176,16 +177,16 @@ class Slim(RecSys):
                 gradient = np.sum(1 / (1 + np.exp(x_uij))) / m
 
                 # Update only items corresponding to users in this batch
-                items_mask = self.urm[u, :].A > 0
+                items_mask = urm[u, :].A > 0
 
                 # Compute gradients and update parameters
                 # Update i parameters
-                self.slim_matrix[i] -= lr * (-gradient + ((self.lambda_i / m) * self.slim_matrix[i])) * items_mask
-                self.slim_matrix[i, i] = 0
+                slim_matrix[i] -= lr * (-gradient + ((self.lambda_i / m) * slim_matrix[i])) * items_mask
+                slim_matrix[i, i] = 0
 
                 # Update j parameters
-                self.slim_matrix[j] -= lr * (gradient + ((self.lambda_j / m) * self.slim_matrix[j])) * items_mask
-                self.slim_matrix[j, j] = 0
+                slim_matrix[j] -= lr * (gradient + ((self.lambda_j / m) * slim_matrix[j])) * items_mask
+                slim_matrix[j, j] = 0
 
     def loss(self, i_param, j_param, x_uij):
         m = x_uij.shape[0]

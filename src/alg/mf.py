@@ -6,6 +6,7 @@ from src.alg.recsys import RecSys
 import scipy.sparse as sp
 
 
+# TODO this method works really really bad, remove it?
 class MFBpr(RecSys):
     def __init__(self, lr=0.01, batch_size=1, epochs=1, all_dataset=True, factors=8, lambda_u=0, lambda_i=0, lambda_j=0):
 
@@ -33,7 +34,7 @@ class MFBpr(RecSys):
         batches = []
         full_batches = self.num_interactions // batch_size
 
-        for i in range(full_batches):
+        for _ in range(full_batches):
             batches.append(self.bpr_sampler.sample_batch(batch_size))
 
         need_fill = self.num_interactions % batch_size
@@ -54,12 +55,15 @@ class MFBpr(RecSys):
 
         num_users = urm.shape[0]
         num_items = urm.shape[1]
-        user_factors = np.random.random_sample((num_users, self.factors))
-        item_factors = np.random.random_sample((num_items, self.factors))
+        user_factors = np.random.random_sample((num_users, self.factors)).astype(np.float32)
+        item_factors = np.random.random_sample((num_items, self.factors)).astype(np.float32)
 
         self.train(self.lr, self.num_epochs, user_factors, item_factors)
 
-        return sp.csr_matrix(np.dot(user_factors, item_factors.T))
+        user_factors = sp.csr_matrix(user_factors)
+        item_factors = sp.csr_matrix(item_factors)
+
+        return user_factors * item_factors.T
 
     def train(self, lr, num_epochs, user_factors, item_factors):
 
@@ -86,16 +90,20 @@ class MFBpr(RecSys):
 
                 z = 1.0 / (1.0 + np.exp(x))
 
+                u_factors = user_factors[u, :]
+                i_factors = item_factors[i, :]
+                j_factors = item_factors[j, :]
+
                 # Update u params
-                d = (item_factors[i, :] - item_factors[j, :]) * z - self.lambda_u * user_factors[u, :]
+                d = (i_factors - j_factors) * z - self.lambda_u * u_factors
                 user_factors[u, :] += lr * d
 
                 # Update i params
-                d = user_factors[u, :] * z - self.lambda_i * item_factors[i, :]
+                d = u_factors * z - self.lambda_i * i_factors
                 item_factors[i, :] += lr * d
 
                 # Update j params
-                d = -user_factors[u, :] * z - self.lambda_j * item_factors[j, :]
+                d = -u_factors * z - self.lambda_j * j_factors
                 item_factors[j, :] += lr * d
 
     def mgd(self):

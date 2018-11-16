@@ -40,12 +40,16 @@ class Hybrid(RecSys):
         # Compute combined ratings
         ratings = sp.csr_matrix(dataset.shape, dtype=np.float32)
 
+        '''
+        TODO
+        I'm still not sure about the code below.
+        By using Slim + CBF & CB it works on 16 gb ram.
+        But I'm pretty sure that if we 
+        '''
         while self.models:
 
             model, w = self.models.pop()
-
             model_ratings = model.rate(dataset)
-            del model
 
             if self.normalize:
                 model_ratings = model_ratings.multiply(1 / model_ratings.max())

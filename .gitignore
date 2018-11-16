@@ -20,6 +20,7 @@ env
 # Editors ---------------------------------------
 .vscode
 .idea
+*.code-workspace
 
 # Personal runfiles -----------------------------
 #| This files are different from user to user |#
