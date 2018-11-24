@@ -29,6 +29,8 @@ class MFBpr(RecSys):
 
         self.factors = factors
 
+        raise DeprecationWarning("This method has not been updated")
+
     def build_batches(self, batch_size):
         assert batch_size <= self.num_interactions, "Batch size is too big"
         batches = []

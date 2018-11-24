@@ -35,7 +35,7 @@ class RecSys:
         except NameError:
             cache = Cache()
             self.cache = cache
-    
+
 
     def run(self, dataset=None, targets=None, k=10):
         """
@@ -70,7 +70,7 @@ class RecSys:
 
         # Compute ratings
         ratings = self.rate(dataset)
-        
+
         print("predicting ...")
         start = timer()
         # Predict
@@ -80,7 +80,7 @@ class RecSys:
 
         return preds
 
-    
+
     def evaluate(self, train_set="train_set", test_set="test_set", targets=None, k=10):
         """
         Evaluate system using a train set and a test set
@@ -101,7 +101,7 @@ class RecSys:
         """
 
         test_set = self.cache.fetch(test_set) if isinstance(test_set, str) else test_set
-        
+
         # Predict
         preds = self.run(dataset=train_set, targets=targets, k=k)
 
@@ -112,8 +112,11 @@ class RecSys:
 
         return score
 
-    
-    def rate(self, dataset=None):
+    def compute_similarity(self, dataset):
+        raise NotImplementedError
+
+
+    def rate(self, dataset):
         """
         Computes items ratings for target users
 

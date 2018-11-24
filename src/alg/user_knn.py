@@ -48,8 +48,7 @@ class UserKNN(RecSys):
         self.qfunc = qfunc
         self.knn = knn
 
-    def rate(self, dataset):
-
+    def compute_similarity(self, dataset=None):
         print("computing similarity between users ...")
         start = timer()
         # Compute cosine similarity between users
@@ -61,11 +60,14 @@ class UserKNN(RecSys):
         s = knn(s, self.knn)
         print("elapsed: {:.3f}s\n".format(timer() - start))
 
+        return s
+
+    def rate(self, dataset):
+        s = self.compute_similarity(dataset)
         print("computing ratings ...")
         start = timer()
         # Compute ratings
         ratings = (dataset.T * s).tocsr()
         print("elapsed time: {:.3f}s\n".format(timer() - start))
         del s
-
         return ratings.T

@@ -53,9 +53,7 @@ class ItemKNN(RecSys):
         self.knn = knn
         self.features = features
 
-
-    def rate(self, dataset):
-
+    def compute_similarity(self, dataset=None):
         print("computing similarity ...")
         start = timer()
         # Compute similarity matrix
@@ -103,6 +101,10 @@ class ItemKNN(RecSys):
         s = knn(s, self.knn)
         print("elapsed: {:.3f}s\n".format(timer() - start))
 
+        return s
+
+    def rate(self, dataset):
+        s = self.compute_similarity(dataset)
         print("computing ratings ...")
         start = timer()
         # Compute playlist-track ratings

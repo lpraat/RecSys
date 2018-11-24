@@ -29,8 +29,8 @@ class Slim(RecSys):
         self.num_interactions = None
         self.bpr_sampler = None
 
-    def rate(self, dataset=None):
 
+    def compute_similarity(self, dataset):
         if self.all_dataset:
             urm = self.cache.fetch("interactions")
         else:
@@ -46,26 +46,32 @@ class Slim(RecSys):
 
         slim_dim = urm.shape[1]
         # Similarity matrix slim is trying to learn
-        slim_matrix = np.zeros((slim_dim, slim_dim), dtype=np.float32)
+        s = np.zeros((slim_dim, slim_dim), dtype=np.float32)
 
         print("Training Slim...")
         start = time.time()
-        self.train(self.lr, self.batch_size, self.epochs, urm, slim_matrix)
+        self.train(self.lr, self.batch_size, self.epochs, urm, s)
         print("elapsed: {:.3f}s\n".format(time.time() - start))
 
         print("Taking Slim k nearest neighbors...")
         start = time.time()
-        slim_matrix = knn(slim_matrix.T, knn=self.knn)
+        s = knn(s.T, knn=self.knn)
         print("elapsed: {:.3f}s\n".format(time.time() - start))
+
+        return s
+
+    def rate(self, dataset):
+
+        s = self.compute_similarity(dataset)
 
         print("Computing Slim ratings...")
         start = time.time()
         if self.dual:
-            ratings = (dataset.T * slim_matrix).tocsr()
+            ratings = (dataset.T * s).tocsr()
         else:
-            ratings = (dataset * slim_matrix).tocsr()
+            ratings = (dataset * s).tocsr()
         print("elapsed: {:.3f}s\n".format(time.time() - start))
-        del slim_matrix
+        del s
 
         if self.dual:
             return ratings.T

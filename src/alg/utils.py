@@ -71,7 +71,8 @@ def cosine_similarity(input, alpha=0.5, asym=True, h=0., dtype = np.float32):
     return s
 
 def knn(s, knn=np.inf):
-    s = sp.csr_matrix(s)
+    if (type(s) is not sp.csr_matrix):
+        s = sp.csr_matrix(s)
     if knn != np.inf:
         # For each row
         for row in range(len(s.indptr) - 1):
