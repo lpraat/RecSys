@@ -113,6 +113,9 @@ class RecSys:
         return score
 
     def compute_similarity(self, dataset):
+        """
+        Computes similarity matrix
+        """
         raise NotImplementedError
 
 
