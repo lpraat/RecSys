@@ -18,7 +18,7 @@ class Hybrid(RecSys):
     def __init__(self, *models, normalize=True):
         """
         Constructor
-        
+
         Parameters
         -----------
         *models : RecSys
@@ -39,7 +39,7 @@ class Hybrid(RecSys):
 
         # Compute combined ratings
         ratings = sp.csr_matrix(dataset.shape, dtype=np.float32)
-        
+
         while self.models:
 
             model, w = self.models.pop()

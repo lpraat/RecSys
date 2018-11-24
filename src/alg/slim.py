@@ -48,18 +48,17 @@ class Slim(RecSys):
         # Similarity matrix slim is trying to learn
         slim_matrix = np.zeros((slim_dim, slim_dim), dtype=np.float32)
 
-        print("Training Slim")
+        print("Training Slim...")
         start = time.time()
         self.train(self.lr, self.batch_size, self.epochs, urm, slim_matrix)
         print("elapsed: {:.3f}s\n".format(time.time() - start))
 
-        print("Taking Slim k nearest neighbors")
+        print("Taking Slim k nearest neighbors...")
         start = time.time()
         slim_matrix = knn(slim_matrix.T, knn=self.knn)
-
         print("elapsed: {:.3f}s\n".format(time.time() - start))
 
-        print("Computing Slim ratings")
+        print("Computing Slim ratings...")
         start = time.time()
         if self.dual:
             ratings = (dataset.T * slim_matrix).tocsr()

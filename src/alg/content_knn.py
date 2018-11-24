@@ -10,14 +10,14 @@ import scipy.sparse as sp
 
 from src.metrics import evaluate
 from .recsys import RecSys
-from .utils import cosine_similarity, predict
+from .utils import cosine_similarity, predict, knn
 
 
 class ContentKNN(RecSys):
     """ Content based recommender """
 
 
-    def __init__(self, *features):
+    def __init__(self, *features, knn=np.inf):
         """
         Constructor
 
@@ -34,8 +34,9 @@ class ContentKNN(RecSys):
 
         # Initial values
         self.features = features
-        
-        
+        self.knn = knn
+
+
     def rate(self, dataset):
 
         # Create similarity matrix
@@ -53,8 +54,6 @@ class ContentKNN(RecSys):
             feature_alpha = feature_config["alpha"] if "alpha" in feature_config else 0.5
             feature_asym = feature_config["asym"] if "asym" in feature_config else True
             feature_h = feature_config["h"] if "h" in feature_config else 0
-            feature_knn = feature_config["knn"] if "knn" in feature_config else np.inf
-            feature_qfunc = feature_config["qfunc"] if "qfunc" in feature_config else None
 
             print("loading data for feature {} ...\n".format(i))
             # Fetch feature from cache
@@ -69,17 +68,20 @@ class ContentKNN(RecSys):
                     alpha=feature_alpha,
                     asym=feature_asym,
                     h=feature_h,
-                    knn=feature_knn,
-                    qfunc=feature_qfunc,
                     dtype=np.float32
                 ) * feature_w
                 print("elapsed: {:.3f}s\n".format(timer() - start))
 
             else:
                 print("feature {} not found".format(i))
-            
+
             # Next feature
             feature += 1
+
+        print("computing similarity knn...")
+        start = timer()
+        s = knn(s, self.knn)
+        print("elapsed: {:.3f}s\n".format(timer() - start))
 
         print("computing ratings matrix ...")
         start = timer()

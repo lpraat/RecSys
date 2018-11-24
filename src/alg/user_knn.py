@@ -10,7 +10,7 @@ from timeit import default_timer as timer
 
 from src.metrics import evaluate
 from .recsys import RecSys
-from .utils import cosine_similarity, predict
+from .utils import cosine_similarity, predict, knn
 
 
 class UserKNN(RecSys):
@@ -47,14 +47,19 @@ class UserKNN(RecSys):
         self.h = np.float32(h)
         self.qfunc = qfunc
         self.knn = knn
-    
+
     def rate(self, dataset):
 
         print("computing similarity between users ...")
         start = timer()
         # Compute cosine similarity between users
-        s = cosine_similarity(dataset.T, alpha=self.alpha, asym=self.asym, knn=self.knn, h=self.h, qfunc=self.qfunc, dtype=np.float32)
+        s = cosine_similarity(dataset.T, alpha=self.alpha, asym=self.asym, h=self.h, dtype=np.float32)
         print("elapsed time: {:.3f}s\n".format(timer() - start))
+
+        print("computing similarity knn...")
+        start = timer()
+        s = knn(s, self.knn)
+        print("elapsed: {:.3f}s\n".format(timer() - start))
 
         print("computing ratings ...")
         start = timer()

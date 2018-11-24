@@ -8,7 +8,7 @@ import random
 from timeit import default_timer as timer
 
 
-def cosine_similarity(input, alpha=0.5, asym=True, h=0., knn=np.inf, qfunc=None, dtype = np.float32):
+def cosine_similarity(input, alpha=0.5, asym=True, h=0., dtype = np.float32):
     """
     Calculate the cosine similarity
 
@@ -27,7 +27,7 @@ def cosine_similarity(input, alpha=0.5, asym=True, h=0., knn=np.inf, qfunc=None,
     dtype : data-type, optional
         underlying type on which to operate
     """
-    
+
     # Calc norm factors
     norms = input.sum(axis=0).A.ravel().astype(dtype)
 
@@ -45,7 +45,7 @@ def cosine_similarity(input, alpha=0.5, asym=True, h=0., knn=np.inf, qfunc=None,
 
         # Compute similarity matrix
         s = (norm_input.T * norm_input)
-    
+
     else:
         # Compute similarity matrix
         s = (input.T * input).tocsr()
@@ -67,37 +67,9 @@ def cosine_similarity(input, alpha=0.5, asym=True, h=0., knn=np.inf, qfunc=None,
         del norms
         del norm_factors
 
-    # KNN
-    if knn != np.inf:
-        # For each row
-        for row in range(len(s.indptr) - 1):
-            # Row offsets
-            row_start = s.indptr[row]
-            row_end = s.indptr[row + 1]
-
-            # Get row data slice
-            row_data = s.data[row_start:row_end]
-
-            if len(row_data) > knn:
-                # Discard not meaningful data
-                # We take the smallest similarities in the data array
-                # and set those data values to 0 using row_start as offset
-                # The result is not an actual sparse matrix but it's insanely fast
-                discard = np.argpartition(row_data, -knn)[:-knn] + row_start
-                s.data[discard] = 0
-            
-        # Recompute sparsity
-        s = recompute_sparsity(s)
-
-    # Finally apply qfunc on the individual weights
-    if qfunc:
-        qfunc = np.vectorize(qfunc)
-        s.data = qfunc(s.data)
-    
     # Return computed similarity matrix
     return s
 
-# todo
 def knn(s, knn=np.inf):
     s = sp.csr_matrix(s)
     if knn != np.inf:
@@ -139,7 +111,7 @@ def clusterize(input, s=None, k=8):
 
     # Require a csr matrix for fast row access
     assert isinstance(input, sp.csr_matrix), "csr_matrix required, {} given".format(type(input))
-    
+
     if s is not None:
         # Sanity check
         assert s.shape[0] == s.shape[1] and s.shape[0] == input.shape[0], "similarity matrix dimensions don't match"
@@ -150,7 +122,7 @@ def clusterize(input, s=None, k=8):
         # Compute similarity between users
         s = cosine_similarity(input.T, dtype=np.float32)
         print("elapsed time: {:.3f}s".format(timer() - start))
-    
+
     print("computing clusters of similar users ...")
     start = timer()
     # Randomly pick center for first cluster
@@ -188,16 +160,16 @@ def clusterize(input, s=None, k=8):
         for cl in clusters:
             # Original averages on all sample
             sim.append(np.average(row_i[cl]))
-        
+
         # Put in cluster which nearest point is the absolute nearest
         ki = np.argmax(sim)
         clusters[ki].append(ui)
-        
+
         # Determine
         num_indices = input.indptr[ui + 1] - input.indptr[ui]
         subsets_indptr[ki].append(num_indices + subsets_indptr_off[ki])
         subsets_indptr_off[ki] += num_indices
-    
+
     print("elapsed time: {:.3f}s".format(timer() - start))
 
     print("splitting matrix in clusters ...")
@@ -225,7 +197,7 @@ def clusterize(input, s=None, k=8):
             subsets[ki].indices[subset_row_start:subset_row_end] = input.indices[input_row_start:input_row_end]
 
     print("elapsed time: {:.3f}s".format(timer() - start))
-    
+
     # Return clusters
     return clusters, subsets
 
@@ -251,7 +223,7 @@ def predict(ratings, targets=None, k=10, mask=None, invert_mask=False):
     # Convert to csr for fast row access
     mask = mask.tocsr()
     ratings = ratings.tocsr()
-    
+
     # Compute individually for each user
     preds = []
     for ui in targets:
@@ -326,7 +298,7 @@ def recompute_sparsity(mat):
         # Push number of non-zero elements
         num_nonzero = np.count_nonzero(mat.data[row_start:row_end])
         indptr.append(indptr[row_i] + num_nonzero)
-    
+
     # Rebuild matrix
     return sp.csr_matrix((
         data,

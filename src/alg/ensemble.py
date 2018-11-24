@@ -21,7 +21,7 @@ class Ensemble(RecSys):
     def __init__(self, *models, method="combining"):
         """
         Constructor
-        
+
         Parameters
         -----------
         *models : RecSys
@@ -39,7 +39,7 @@ class Ensemble(RecSys):
 
         if self.method == "combining":
             n = len(self.models)
-            
+
             # Run each model
             ensemble_preds = []
             for model in self.models:
@@ -61,12 +61,12 @@ class Ensemble(RecSys):
 
                 preds.append((ensemble_preds[0][ti][0], pred))
             print("elapsed time: {:.3f}\n".format(timer() - start))
-            
+
             return preds
-        
+
         elif self.method == "roundrobin":
             n = len(self.models)
-            
+
             # Run each model
             ensemble_preds = []
             for model, _ in self.models:
@@ -91,10 +91,10 @@ class Ensemble(RecSys):
                     item = ensemble_preds[mi][ti][1][offset[mi]]; offset[mi] += 1
                     while item in pred:
                         item = ensemble_preds[mi][ti][1][offset[mi]]; offset[mi] += 1
-                    
+
                     # Append to predictions
                     pred.append(item)
-                
+
                 preds.append((ensemble_preds[0][ti][0], pred))
             print("elapsed time: {:.3f}\n".format(timer() - start))
 

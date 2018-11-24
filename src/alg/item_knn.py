@@ -10,19 +10,19 @@ from timeit import default_timer as timer
 
 from src.metrics import evaluate
 from .recsys import RecSys
-from .utils import cosine_similarity, predict
+from .utils import cosine_similarity, predict, knn
 
 
 class ItemKNN(RecSys):
     """
     Item recommender.
-    
+
     Recommends items based on the similarity between items
     """
 
 
     def __init__(self, *features, alpha=0.5, asym=True, knn=np.inf, h=0, qfunc=None):
-        """ 
+        """
         Constructor
 
         Parameters
@@ -53,13 +53,13 @@ class ItemKNN(RecSys):
         self.knn = knn
         self.features = features
 
-    
+
     def rate(self, dataset):
 
         print("computing similarity ...")
         start = timer()
         # Compute similarity matrix
-        s = cosine_similarity(dataset, alpha=self.alpha, asym=self.asym, h=self.h, knn=self.knn, qfunc=self.qfunc, dtype=np.float32)
+        s = cosine_similarity(dataset, alpha=self.alpha, asym=self.asym, h=self.h, dtype=np.float32)
         print("elapsed: {:.3f}s\n".format(timer() - start))
 
         # Compute similarity for features
@@ -74,8 +74,6 @@ class ItemKNN(RecSys):
             feature_alpha = feature_config["alpha"] if "alpha" in feature_config else 0.5
             feature_asym = feature_config["asym"] if "asym" in feature_config else True
             feature_h = feature_config["h"] if "h" in feature_config else 0
-            feature_knn = feature_config["knn"] if "knn" in feature_config else np.inf
-            feature_qfunc = feature_config["qfunc"] if "qfunc" in feature_config else None
 
             print("loading data for feature {} ...\n".format(feature_i))
             # Fetch feature from cache
@@ -90,17 +88,20 @@ class ItemKNN(RecSys):
                     alpha=feature_alpha,
                     asym=feature_asym,
                     h=feature_h,
-                    knn=feature_knn,
-                    qfunc=feature_qfunc,
                     dtype=np.float32
                 ) * feature_w
                 print("elapsed: {:.3f}s\n".format(timer() - start))
 
             else:
                 print("feature {} not found".format(feature_i))
-            
+
             # Next feature
             feature_i += 1
+
+        print("computing similarity knn...")
+        start = timer()
+        s = knn(s, self.knn)
+        print("elapsed: {:.3f}s\n".format(timer() - start))
 
         print("computing ratings ...")
         start = timer()
