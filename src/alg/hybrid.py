@@ -47,6 +47,7 @@ class Hybrid(RecSys):
             model_ratings = model.rate(dataset)
 
             if self.normalize:
+                # model_ratings = normalize(model_ratings, norm='max', axis=1)
                 model_ratings = normalize(model_ratings, norm='l2', axis=1)
 
             model_ratings = model_ratings * w

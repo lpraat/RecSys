@@ -11,7 +11,8 @@ from src.alg.utils import knn
 
 
 class Slim(RecSys):
-    def __init__(self, all_dataset, lr=0.01, batch_size=1, epochs=1, lambda_i=0, lambda_j=0, knn=np.inf, dual=False):
+    def __init__(self, all_dataset, lr=0.01, batch_size=1, epochs=1,
+                 lambda_i=0, lambda_j=0, knn=np.inf, dual=False):
         super().__init__()
 
         self.dual = dual
@@ -93,6 +94,7 @@ class Slim(RecSys):
         return batches
 
     def sgd(self, lr, num_epochs, urm, slim_matrix):
+        """ Stochasting gradient descent """
 
         for i in range(num_epochs):
 
@@ -138,6 +140,7 @@ class Slim(RecSys):
             self.mgd(lr, batch_size, num_epochs, urm, slim_matrix)
 
     def mgd(self, lr, batch_size, num_epochs, urm, slim_matrix):
+        """ Mini batch gradient descent """
 
         for i in range(num_epochs):
 

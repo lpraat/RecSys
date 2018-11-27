@@ -16,10 +16,11 @@ class HybridSimilarity(RecSys):
     models.
     """
 
-    def __init__(self, *models, knn=np.inf):
+    def __init__(self, *models, knn=np.inf, mode='item'):
         super().__init__()
         self.models = list(models)
         self.knn = knn
+        self.mode = mode
 
     def compute_similarity(self, dataset):
 
@@ -27,7 +28,10 @@ class HybridSimilarity(RecSys):
             raise RuntimeError("You already called rate")
 
         # shape[1] since we just use this method with item similarities
-        s = sp.csr_matrix((dataset.shape[1], dataset.shape[1]), dtype=np.float32)
+        if self.mode == 'item':
+            s = sp.csr_matrix((dataset.shape[1], dataset.shape[1]), dtype=np.float32)
+        else:
+            s = sp.csr_matrix((dataset.shape[0], dataset.shape[0]), dtype=np.float32)
 
         while self.models:
             model, w = self.models.pop()
@@ -46,6 +50,15 @@ class HybridSimilarity(RecSys):
 
         print("computing ratings ...")
         start = timer()
-        ratings = (dataset * s).tocsr()
+        if self.mode == 'item':
+            ratings = (dataset * s).tocsr()
+        else:
+            ratings = (dataset.T * s).tocsr()
+        del s
         print("elapsed: {:.3f}s\n".format(timer() - start))
-        return ratings
+
+
+        if self.mode == 'item':
+            return ratings
+        else:
+            return ratings.T
