@@ -1,9 +1,10 @@
-from src.alg.recsys import RecSys
-
-import scipy.sparse as sp
-import numpy as np
-from sklearn.preprocessing import normalize
 from timeit import default_timer as timer
+
+import numpy as np
+import scipy.sparse as sp
+from sklearn.preprocessing import normalize
+
+from src.alg.recsys import RecSys
 from src.alg.utils import knn
 
 

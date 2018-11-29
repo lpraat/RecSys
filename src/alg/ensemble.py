@@ -2,11 +2,10 @@
 This file contains the Ensemble recommender which combines different models.
 """
 
-import numpy as np
-import scipy.sparse as sp
 from timeit import default_timer as timer
 
-from src.metrics import evaluate
+import numpy as np
+
 from .recsys import RecSys
 
 

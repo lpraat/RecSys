@@ -8,7 +8,7 @@ class TestData(unittest.TestCase):
     def test_build_train_set_uniform(self):
         # Load interaction matrix
         interactions = load_file("interactions.obj").tocsr()
-        if interactions == None:
+        if interactions is None:
             interactions = parse_interactions().tocsr()
             save_file("interactions.obj", interactions)
 

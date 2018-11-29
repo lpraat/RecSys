@@ -1,8 +1,10 @@
-from src.alg.recsys import RecSys
+import numpy as np
+import scipy.sparse as sp
 from scipy.sparse.linalg import svds
 
-import scipy.sparse as sp
-import numpy as np
+from src.alg.recsys import RecSys
+from src.alg.utils import knn
+
 
 class SVD(RecSys):
 
@@ -12,14 +14,12 @@ class SVD(RecSys):
         self.knn = knn
 
     def compute_similarity(self, dataset):
-        print('Computing S _URM_SVD...')
-
-        URM = sp.csr_matrix(dataset, dtype=float)
-        _, _, vt = svds(URM, k=self.factors)
-        v = vt.T
-        s = np.dot(v, vt)
+        _, _, vt = svds(dataset.asfptype(), k=self.factors)
+        vt = sp.csr_matrix(vt)
+        s = vt.T * vt
         return s
 
     def rate(self, dataset):
         s = self.compute_similarity(dataset)
-        return (dataset * s)
+        s = knn(s, self.knn)
+        return dataset * s

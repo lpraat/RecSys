@@ -1,12 +1,11 @@
-import numpy as np
 import time
 
-from src.alg import ItemKNN
+import numpy as np
+import scipy.sparse as sp
+from numpy.linalg import linalg as LA
+
 from src.alg.bpr import BPRSampler
 from src.alg.recsys import RecSys
-from numpy.linalg import linalg as LA
-import scipy.sparse as sp
-
 from src.alg.utils import knn
 
 
@@ -29,7 +28,6 @@ class Slim(RecSys):
 
         self.num_interactions = None
         self.bpr_sampler = None
-
 
     def compute_similarity(self, dataset):
         if self.all_dataset:

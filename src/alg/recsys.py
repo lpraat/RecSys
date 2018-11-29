@@ -36,7 +36,6 @@ class RecSys:
             cache = Cache()
             self.cache = cache
 
-
     def run(self, dataset=None, targets=None, k=10):
         """
         Computes k predictions for each target
@@ -80,7 +79,6 @@ class RecSys:
 
         return preds
 
-
     def evaluate(self, train_set="train_set", test_set="test_set", targets=None, k=10):
         """
         Evaluate system using a train set and a test set
@@ -117,7 +115,6 @@ class RecSys:
         Computes similarity matrix
         """
         raise NotImplementedError
-
 
     def rate(self, dataset):
         """

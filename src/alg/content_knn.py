@@ -8,14 +8,12 @@ from timeit import default_timer as timer
 import numpy as np
 import scipy.sparse as sp
 
-from src.metrics import evaluate
 from .recsys import RecSys
-from .utils import cosine_similarity, predict, knn
+from .utils import cosine_similarity, knn
 
 
 class ContentKNN(RecSys):
     """ Content based recommender """
-
 
     def __init__(self, *features, knn=np.inf):
         """

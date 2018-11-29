@@ -1,4 +1,5 @@
 import unittest
+
 import scipy.sparse as sp
 
 from src.alg.slim import BPRSampler

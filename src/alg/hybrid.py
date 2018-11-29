@@ -4,8 +4,9 @@ This file contains the Ensemble recommender which combines different models.
 
 import numpy as np
 import scipy.sparse as sp
-from .recsys import RecSys
 from sklearn.preprocessing import normalize
+
+from .recsys import RecSys
 
 
 class Hybrid(RecSys):

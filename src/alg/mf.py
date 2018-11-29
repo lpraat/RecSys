@@ -1,9 +1,8 @@
 import numpy as np
-import time
+import scipy.sparse as sp
 
 from src.alg.bpr import BPRSampler
 from src.alg.recsys import RecSys
-import scipy.sparse as sp
 
 
 # TODO this method works really really bad, remove it?

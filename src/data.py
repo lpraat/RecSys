@@ -7,8 +7,9 @@ import math
 import os
 import pickle
 import random
-import numpy as np
 from timeit import default_timer as timer
+
+import numpy as np
 
 from src.const import cache_path, NUM_PLAYLIST
 from src.parser import parse_interactions, parse_tracks, parse_targets

@@ -4,8 +4,6 @@ in k clusters of most similar users, and then runs the requested
 sub recsys on each of these clusters
 """
 
-import numpy as np
-import scipy.sparse as sp
 import multiprocessing as mp
 from timeit import default_timer as timer
 

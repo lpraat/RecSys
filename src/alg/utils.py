@@ -2,13 +2,13 @@
 This file contains various utility functions used in most of the recommender algorithms
 """
 
-import numpy as np
-import scipy.sparse as sp
-import random
 from timeit import default_timer as timer
 
+import numpy as np
+import scipy.sparse as sp
 
-def cosine_similarity(input, alpha=0.5, asym=True, h=0., dtype = np.float32):
+
+def cosine_similarity(input, alpha=0.5, asym=True, h=0., dtype=np.float32):
     """
     Calculate the cosine similarity
 
@@ -70,8 +70,9 @@ def cosine_similarity(input, alpha=0.5, asym=True, h=0., dtype = np.float32):
     # Return computed similarity matrix
     return s
 
+
 def knn(s, knn=np.inf):
-    if (type(s) is not sp.csr_matrix):
+    if type(s) is not sp.csr_matrix:
         s = sp.csr_matrix(s)
     if knn != np.inf:
         # For each row
@@ -255,9 +256,10 @@ def predict(ratings, targets=None, k=10, mask=None, invert_mask=False):
             sort_idxs = np.argsort(-ratings_i_data[top_idxs])
         else:
             # @todo hardcoded, not very elegant but it works
-            top_pop = np.array([ 2272, 18266, 13980,  2674, 17239, 10496, 15578,  5606, 10848, 8956])
+            top_pop = np.array([2272, 18266, 13980, 2674, 17239, 10496, 15578, 5606, 10848, 8956])
             delta = k - len(ratings_i_indices)
-            items_i = np.append(ratings_i_indices, top_pop[np.in1d(top_pop, ratings_i_indices, assume_unique=True, invert=True)])
+            items_i = np.append(ratings_i_indices,
+                                top_pop[np.in1d(top_pop, ratings_i_indices, assume_unique=True, invert=True)])
             ratings_i = np.append(ratings_i_data, np.zeros(delta, dtype=np.float32))
             sort_idxs = np.argsort(-ratings_i)
 

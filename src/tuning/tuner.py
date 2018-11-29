@@ -1,12 +1,12 @@
+import itertools
+import os
 import pprint
 from random import shuffle
-
-import numpy as np
-import os
 from timeit import default_timer as timer
 
+import numpy as np
+
 from src.const import tune_path
-import itertools
 
 
 class Callable:

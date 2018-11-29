@@ -4,8 +4,6 @@ import numpy as np
 class BPRSampler:
     def __init__(self, urm):
         self.urm = urm.tocsr()
-
-        # todo maybe using a dict here is better?
         self.lil_urm = urm.tolil()
 
     def sample(self):

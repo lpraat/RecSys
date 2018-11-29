@@ -4,13 +4,12 @@ a user-based collaborative filtering algorithm to determine the ranking
 of each item for each user.
 """
 
-import numpy as np
-import scipy.sparse as sp
 from timeit import default_timer as timer
 
-from src.metrics import evaluate
+import numpy as np
+
 from .recsys import RecSys
-from .utils import cosine_similarity, predict, knn
+from .utils import cosine_similarity, knn
 
 
 class UserKNN(RecSys):
