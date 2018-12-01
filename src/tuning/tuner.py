@@ -278,14 +278,13 @@ class HyperparameterTuner:
         with open(tune_path + "/" + self.file_name, "w") as f:
             f.write(h_names + "," + "MAP@10\n")
 
-    def write_history(self):
+    def write_history(self, k, v):
         if self.file_name:
             print("Writing to file results ...")
             with open(tune_path + "/" + self.file_name, "a") as f:
-                for k, v in self.history.items():
-                    s_map = "{:.5f}".format(v)
-                    f.write(",".join(str(el) for el in k) + "," + s_map)
-                    f.write("\n")
+                s_map = "{:.5f}".format(v)
+                f.write(",".join(str(el) for el in k) + "," + s_map)
+                f.write("\n")
 
     def print_history(self):
         pprint.pprint(self.history, width=1)
@@ -299,7 +298,6 @@ class HyperparameterTuner:
                     if not self.cartesian_products:
                         print("Exhausted all possible combinations, printing results ...")
                         self.print_history()
-                        self.write_history()
                         return
 
                     # Sample new hyperparameter values from their products
@@ -318,7 +316,6 @@ class HyperparameterTuner:
                             # We probably exhausted all the combinations in the search space
                             print("Interrupted tuning because of max resample, printing results ...")
                             self.print_history()
-                            self.write_history()
                             return
 
                         new_hyperparameters = self.new_random_samples()
@@ -336,9 +333,9 @@ class HyperparameterTuner:
                 print("Got MAP@10: {:.5f}\n".format(map_at_k))
                 print("elapsed: {:.3f}s\n".format(timer() - start))
                 self.history.update({new_hyperparameters: map_at_k})
+                self.write_history(new_hyperparameters, map_at_k)
 
         except KeyboardInterrupt:
             print("Interrupted tuning, printing results ...")
             self.print_history()
-            self.write_history()
 
