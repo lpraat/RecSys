@@ -17,11 +17,12 @@ class HybridSimilarity(RecSys):
     models.
     """
 
-    def __init__(self, *models, knn=np.inf, mode='item'):
+    def __init__(self, *models, knn=np.inf, mode='item', normalize=True):
         super().__init__()
         self.models = list(models)
         self.knn = knn
         self.mode = mode
+        self.normalize = normalize
 
     def compute_similarity(self, dataset):
 
@@ -42,7 +43,8 @@ class HybridSimilarity(RecSys):
             s += model_similarity
             del model_similarity
 
-        s = normalize(s, norm='l2', axis=1)
+        if self.normalize:
+            s = normalize(s, norm='l2', axis=1)
         s = knn(s, self.knn)
         return s
 

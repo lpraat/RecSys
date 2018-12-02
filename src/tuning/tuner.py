@@ -10,11 +10,11 @@ from src.const import tune_path
 
 
 class Callable:
-    """A callable model. Either a function or a class.
+    """A callable model. This should be the class of a model.
 
     Attributes
     ----------
-    obj : function or class
+    obj : class
         Callable model.
     args : list
         Callable's arguments.
@@ -82,7 +82,7 @@ class HyperparameterTuner:
 
         Parameters
         ---------------
-        callable_model : function or class
+        callable_model : class
             Callable of the model to be tuned.
         cartesian_product : bool
             Whether to consider the cartesian products of the hyperparameter values or not.
