@@ -1,4 +1,4 @@
-from src.alg import Hybrid, UserKNN
+from src.alg import Hybrid, UserKNN, ItemKNN
 from src.alg.hybrid_similarity import HybridSimilarity
 from src.alg.slim import Slim
 from src.alg.svd import SVD
@@ -25,6 +25,9 @@ h3 = Hybrid((h1, 0.2), (h2, 0.3), normalize=1)
 svd_callable = Callable(SVD, [], {"factors": 200, "knn": 1000})
 svd_weight = Hyperparameter("svd_weight", [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
 
+item_knn_callable = Callable(ItemKNN, [("album_set", 0.2, {}), ("artist_set", 0.1, {})])
+item_knn_weight = Hyperparameter("item_knn_weight", [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
+
 # If we would like to tune, for example, even the knn in the svd we could just do the following instead
 # svd_knn = Hyperparameter("svd_knn", [200, 500, 800, 1000])
 # svd_callable = Callable(SVD, [], {"factors": 200, "knn": 1000})
@@ -38,6 +41,7 @@ slim_j_weight = slim_i_weight  # assign the same weight in each run to both Slim
 
 hybrid_similarity_callable = Callable(HybridSimilarity, [
     (svd_callable, svd_weight),
+    (item_knn_callable, item_knn_weight),
     (slim_i_callable, slim_i_weight),
     (slim_j_callable, slim_j_weight)
 ], kwargs={})
