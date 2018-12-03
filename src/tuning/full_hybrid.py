@@ -35,7 +35,7 @@ hybrid = Callable(Hybrid, [
     (item_knn_callable, item_knn_weight),
     (slim1_callable, slim1_weight),
     (slim2_callable, slim2_weight),
-    (user_knn_weight, user_knn_weight)
+    (user_knn_weight, user_knn_callable)
 ], kwargs={"normalize": hybrid_normalize})
 
 t = HyperparameterTuner(hybrid, cartesian_product=False)
