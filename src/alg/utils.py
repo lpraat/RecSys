@@ -227,7 +227,7 @@ def predict(ratings, targets=None, k=10, mask=None, invert_mask=False):
     ratings = ratings.tocsr()
 
     # Compute individually for each user
-    preds = []
+    preds = {}
     for ui in targets:
         # Get rows
         ratings_i_start = ratings.indptr[ui]
@@ -264,7 +264,7 @@ def predict(ratings, targets=None, k=10, mask=None, invert_mask=False):
             sort_idxs = np.argsort(-ratings_i)
 
         # Add to list
-        preds.append((ui, list(np.resize(items_i[sort_idxs], k))))
+        preds[ui] = list(np.resize(items_i[sort_idxs], k))
 
     # Return predictions
     return preds

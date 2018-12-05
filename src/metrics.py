@@ -54,7 +54,7 @@ def evaluate(preds, targets, k=10):
 
     ap = 0
     for playlist_id, values in targets:
-        pred = preds[playlist_id][1]
+        pred = preds[playlist_id]
         ap += ap_at_k(pred, values, k=min(len(values), k))
 
     return ap / len(targets)
