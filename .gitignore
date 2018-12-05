@@ -26,3 +26,5 @@ env
 #| This files are different from user to user |#
 /src/run.py
 /src/tuning/tune.py
+/src/alg/smart_ensemble/preds
+/src/alg/smart_ensemble/preds_test

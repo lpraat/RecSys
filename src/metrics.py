@@ -38,7 +38,7 @@ def evaluate(preds, targets, k=10):
 
      Parameters
      -------------
-     preds : list
+     preds : dict
          Model predictions as a list of tuples where the first element is the playlist id
          and the second element is the list of predictions for that playlist.
      targets : list
