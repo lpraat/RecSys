@@ -29,3 +29,5 @@ env
 /src/alg/smart_ensemble/preds
 /src/alg/smart_ensemble/preds_test
 /src/alg/smart_ensemble/validate
+/src/alg/smart_ensemble/smart_max.csv
+/src/alg/smart_ensemble/smart_borda.csv
