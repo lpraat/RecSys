@@ -41,7 +41,7 @@ def evaluate(preds, targets, k=10):
      preds : dict
          Model predictions as a list of tuples where the first element is the playlist id
          and the second element is the list of predictions for that playlist.
-     targets : list
+     targets : dict
          Target (true) values for every playlist.
      k : int, optional
          The K in the MAP@K.
@@ -53,7 +53,7 @@ def evaluate(preds, targets, k=10):
      """
 
     ap = 0
-    for playlist_id, values in targets:
+    for playlist_id, values in targets.items():
         pred = preds[playlist_id]
         ap += ap_at_k(pred, values, k=min(len(values), k))
 

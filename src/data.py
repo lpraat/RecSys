@@ -85,7 +85,7 @@ def build_train_set_uniform(interactions, targets=None, p=0.15):
     start = timer()
     # Output variables
     train_set = interactions.copy()
-    test_set = []
+    test_set = {}
 
     csr_inter = interactions.tocsr()
 
@@ -111,7 +111,7 @@ def build_train_set_uniform(interactions, targets=None, p=0.15):
             train_set[playlist_id, track_id] = 0
             test_set_i.append(track_id)
 
-        test_set.append((playlist_id, test_set_i))
+        test_set[playlist_id] = test_set_i
 
         # Debug
         #print("building train set: {}".format(playlist_id))

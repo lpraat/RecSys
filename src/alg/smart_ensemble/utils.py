@@ -18,9 +18,9 @@ def write_preds_to_file(name, model, dataset, targets=cache.fetch("targets")):
 
     with open(os.path.join(path, name + ".csv"), 'w') as f:
         f.write("playlist_id,track_ids\n")
-        for row in preds:
-            f.write(str(row[0]) + ",")
-            f.write(" ".join([str(el) for el in row[1]]))
+        for playlist, values in preds.items():
+            f.write(str(playlist) + ",")
+            f.write(" ".join([str(el) for el in values]))
             f.write("\n")
 
 
