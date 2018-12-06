@@ -110,10 +110,6 @@ def validate_and_build_preds(model_names, k=5, mode='max'):
                 f.write("\n")
 
 
-        print(final_results)
-
-
-
 
 
 

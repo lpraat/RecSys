@@ -18,13 +18,6 @@ cache = Cache()
 path = os.path.dirname(os.path.realpath(__file__)) + "/validate"
 
 
-def build_preds(recsys, train_set):
-    # Compute ratings
-    ratings = recsys.rate(train_set)
-    preds = predict(ratings, targets=cache.fetch("targets"), k=k, mask=train_set, invert_mask=True)
-    return preds
-
-
 def evaluate_preds(preds, test_set):
     return evaluate(preds, test_set)
 

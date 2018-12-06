@@ -33,7 +33,7 @@ class Slim(RecSys):
         if self.all_dataset:
             urm = self.cache.fetch("interactions")
         else:
-            urm = self.cache.fetch("train_set")
+            urm = dataset
 
         urm = urm.tocsr()
 

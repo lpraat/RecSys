@@ -20,8 +20,14 @@ def build_borda_preds(model_names, test=False):
             playlist, model_w = line.split(",")
             playlist = int(playlist)
 
-            models_preds = [p[model] for model, _ in model_w.split(" ")]
-            weights = [float(w) for _, w in model_w.split(" ")]
+            models_preds = []
+            weights = []
+
+            for el in model_w.split("-")[:-1]:
+
+                model_name, w = el.split("=")
+                models_preds.append(p[model_name])
+                weights.append(float(w))
 
             models_preds_and_weights = zip([preds[playlist] for preds in models_preds], weights)
             final_preds[playlist] = borda_count(models_preds_and_weights)

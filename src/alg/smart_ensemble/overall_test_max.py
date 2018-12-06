@@ -5,7 +5,7 @@ import pickle
 from src.alg.smart_ensemble.intialize_sets import build_preds
 from src.metrics import evaluate
 
-path = os.path.dirname(os.path.realpath(__file__)) + "/validate"
+path = os.path.dirname(os.path.realpath(__file__)) + "/test"
 
 
 def build_max_preds(model_names, rel_path):
@@ -44,6 +44,6 @@ def test(k=5):
 
         print(evaluate(preds, test_set))
 
-
 test(5)
+
 

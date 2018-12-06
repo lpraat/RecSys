@@ -6,7 +6,7 @@ from src.alg.smart_ensemble.intialize_sets import build_preds
 from src.alg.smart_ensemble.smart_ensemble import borda_count
 from src.metrics import evaluate
 
-path = os.path.dirname(os.path.realpath(__file__)) + "/validate"
+path = os.path.dirname(os.path.realpath(__file__)) + "/test"
 
 
 def build_borda_preds(model_names, rel_path):
@@ -30,8 +30,6 @@ def build_borda_preds(model_names, rel_path):
 
                 model_name, w = el.split("=")
                 models_preds.append(p[model_name])
-               # models_preds = [p[model] for model, _ in model_w.split("-")[:-1]]
-               # weights = [float(w) for _, w in model_w.split("-")]
                 weights.append(float(w))
 
             models_preds_and_weights = zip([preds[playlist] for preds in models_preds], weights)
