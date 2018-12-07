@@ -2,7 +2,7 @@ import os
 
 import pickle
 
-from src.alg.smart_ensemble.intialize_sets import build_preds
+from src.alg.smart_ensemble.initialize_sets import build_preds
 from src.alg.smart_ensemble.smart_ensemble import borda_count
 from src.metrics import evaluate
 

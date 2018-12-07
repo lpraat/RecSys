@@ -17,7 +17,7 @@ def build_max_preds(model_names, test=False):
         lines = f.readlines()
 
         for line in lines:
-            playlist, model = line.split(",")
+            playlist, model = line[:-1].split(",")
             playlist = int(playlist)
 
             final_preds[playlist] = p[model][playlist]

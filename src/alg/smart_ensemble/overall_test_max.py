@@ -2,7 +2,7 @@ import os
 
 import pickle
 
-from src.alg.smart_ensemble.intialize_sets import build_preds
+from src.alg.smart_ensemble.initialize_sets import build_preds
 from src.metrics import evaluate
 
 path = os.path.dirname(os.path.realpath(__file__)) + "/test"
