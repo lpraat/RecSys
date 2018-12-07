@@ -15,7 +15,7 @@ def create_submission(name, recs):
     ---------------
     name : string
         Prefix of the submission file
-    recs : list
+    recs : dict
         List of computed recommendations
     """
 
@@ -26,7 +26,7 @@ def create_submission(name, recs):
 
     with open(os.path.join(submissions_path, name + str(datetime.datetime.now()) + ".csv"), 'w') as f:
         f.write("playlist_id,track_ids\n")
-        for row in recs:
-            f.write(str(row[0]) + ",")
-            f.write(" ".join([str(el) for el in row[1]]))
+        for playlist, tracks in recs.items():
+            f.write(str(playlist) + ",")
+            f.write(" ".join([str(el) for el in tracks]))
             f.write("\n")
