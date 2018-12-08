@@ -4,12 +4,14 @@
 # Or
 # Weight al the methods and use borda count to build final
 import os
+import math
 
 import pickle
 
 from src.alg.smart_ensemble.initialize_sets import build_preds
 from src.data import Cache
 from src.metrics import ap_at_k
+import numpy as np
 
 path = os.path.dirname(os.path.realpath(__file__)) + "/validate"
 
@@ -38,17 +40,16 @@ def validate_and_build_preds(model_names, k=5, mode='max'):
             models_preds[model_name] = [preds, test_set]
 
         models_preds_over_k[i] = models_preds
-
+    d = 0
     if mode == 'max':
         with open(os.path.dirname(os.path.realpath(__file__)) + '/smart_max.csv', 'w') as f:
 
             final_results = {}
 
             for playlist in targets:
-                print("Processing playlist number: " + str(playlist))
+                #print("Processing playlist number: " + str(playlist))
 
-                best_and_model = (-1, None)
-
+                best_and_model = (-1, "forzajuve")
                 for model in model_names:
 
                     tot_ap = 0
@@ -58,8 +59,19 @@ def validate_and_build_preds(model_names, k=5, mode='max'):
                         tot_ap += model_ap_at_k
 
                     tot_ap /= k
+                      
 
-                    best_and_model = (tot_ap, model) if tot_ap > best_and_model[0] else best_and_model
+                    if (tot_ap - best_and_model[0] > 0.08 and best_and_model[0] < 0.01) and model != "forzajuve":
+                        d+=1
+                        print("------------------")
+                        print("current")
+                        print(best_and_model[1])
+                        print(best_and_model[0])
+                        print(model)
+                        print("new")
+                        print(tot_ap)
+                        print("------------------")
+                    best_and_model = (tot_ap, model) if (tot_ap - best_and_model[0] > 0.08  and best_and_model[0] < 0.01) else best_and_model
 
                 final_results[playlist] = best_and_model[1]
 
@@ -67,6 +79,7 @@ def validate_and_build_preds(model_names, k=5, mode='max'):
                 f.write(str(playlist) + ",")
                 f.write(str(model))
                 f.write("\n")
+            print(d)
 
     else:
 
@@ -75,7 +88,7 @@ def validate_and_build_preds(model_names, k=5, mode='max'):
             final_results = {}
 
             for playlist in targets:
-                print("Processing playlist number: " + str(playlist))
+         #       print("Processing playlist number: " + str(playlist))
 
                 model_aps = []
 
@@ -88,14 +101,19 @@ def validate_and_build_preds(model_names, k=5, mode='max'):
                         tot_ap += model_ap_at_k
 
                     tot_ap /= k
-                    model_aps.append((model, tot_ap))
+                    if not model_aps:
+                        model_aps.append((model, tot_ap))
+                    if model_aps and tot_ap - model_aps[-1][1] > 0.08:
+                        print("Changing to " + str(model))
+                        print("Current is " + str(model_aps[-1][0]))
+                        model_aps.append((model, tot_ap))
 
                 tot = sum(ap for _, ap in model_aps)
-
+ 
                 if tot != 0:
                     model_w = [(model, ap/tot) for model, ap in model_aps]
                 else:
-                    model_w = [(model, 1) for model, ap in model_aps]
+                    model_w = [(model, 1) for model, ap in model_aps if model=='forzajuve']
 
                 final_results[playlist] = model_w
 
@@ -108,9 +126,4 @@ def validate_and_build_preds(model_names, k=5, mode='max'):
                     f.write("-")
 
                 f.write("\n")
-
-
-
-
-
-
+          
