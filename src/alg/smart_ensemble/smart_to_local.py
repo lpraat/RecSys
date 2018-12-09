@@ -1,7 +1,8 @@
-from src.alg import ItemKNN
+from src.alg import ItemKNN, UserKNN, Hybrid
 from src.alg.hybrid_similarity import HybridSimilarity
 from src.alg.p3alpha import P3Alpha
 from src.alg.rp3beta import RP3Beta
+from src.alg.slim import Slim
 from src.alg.smart_ensemble.write_borda import build_borda_preds
 from src.alg.smart_ensemble.utils import write_preds_to_file, build_preds_from_file
 from src.alg.smart_ensemble.write_max import build_max_preds
