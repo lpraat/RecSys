@@ -48,11 +48,16 @@ class Hybrid(RecSys):
             model_ratings = model.rate(dataset)
 
             if self.normalize:
-                # model_ratings = normalize(model_ratings, norm='max', axis=1)
-                model_ratings = normalize(model_ratings, norm='l2', axis=1)
 
-            model_ratings = model_ratings * w
-            ratings += model_ratings
+                for i in range(ratings.shape[0]):
+                    start_data = model_ratings.indptr[i]
+                    end_data = model_ratings.indptr[i+1]
+
+                    row_data = model_ratings.data[start_data:end_data]
+                    row_max = np.max(row_data)
+                    row_data /= row_max
+                    row_data *= w
+
             del model_ratings
 
         return ratings
