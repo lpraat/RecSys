@@ -7,6 +7,7 @@ of each item for each user.
 from timeit import default_timer as timer
 
 import numpy as np
+import similaripy as sim
 
 from .recsys import RecSys
 from .utils import cosine_similarity, knn
@@ -19,8 +20,7 @@ class ItemKNN(RecSys):
     Recommends items based on the similarity between items
     """
 
-
-    def __init__(self, *features, alpha=0.5, asym=True, knn=np.inf, h=0, qfunc=None):
+    def __init__(self, *features, alpha=0.5, asym=True, knn=np.inf, h=0, qfunc=None, splus=False):
         """
         Constructor
 
@@ -51,12 +51,16 @@ class ItemKNN(RecSys):
         self.qfunc = qfunc
         self.knn = knn
         self.features = features
+        self.splus = splus
 
     def compute_similarity(self, dataset=None):
         print("computing similarity ...")
         start = timer()
         # Compute similarity matrix
-        s = cosine_similarity(dataset, alpha=self.alpha, asym=self.asym, h=self.h, dtype=np.float32)
+        if self.splus:
+            s = sim.s_plus(dataset.T, k=self.knn)
+        else:
+            s = cosine_similarity(dataset, alpha=self.alpha, asym=self.asym, h=self.h, dtype=np.float32)
         print("elapsed: {:.3f}s\n".format(timer() - start))
 
         # Compute similarity for features
@@ -80,13 +84,17 @@ class ItemKNN(RecSys):
                 print("computing similarity for feature {} ...".format(feature_i))
                 start = timer()
                 # Compute similarity matrix
-                s += cosine_similarity(
-                    feature,
-                    alpha=feature_alpha,
-                    asym=feature_asym,
-                    h=feature_h,
-                    dtype=np.float32
-                ) * feature_w
+
+                if self.splus:
+                    s += sim.s_plus(feature.T)
+                else:
+                    s += cosine_similarity(
+                        feature,
+                        alpha=feature_alpha,
+                        asym=feature_asym,
+                        h=feature_h,
+                        dtype=np.float32
+                    ) * feature_w
                 print("elapsed: {:.3f}s\n".format(timer() - start))
 
             else:
@@ -95,10 +103,11 @@ class ItemKNN(RecSys):
             # Next feature
             feature_i += 1
 
-        print("computing similarity knn...")
-        start = timer()
-        s = knn(s, self.knn)
-        print("elapsed: {:.3f}s\n".format(timer() - start))
+        if not self.splus:
+            print("computing similarity knn...")
+            start = timer()
+            s = knn(s, self.knn)
+            print("elapsed: {:.3f}s\n".format(timer() - start))
 
         return s
 

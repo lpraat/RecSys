@@ -7,6 +7,7 @@ of each item for each user.
 from timeit import default_timer as timer
 
 import numpy as np
+import similaripy as sim
 
 from .recsys import RecSys
 from .utils import cosine_similarity, knn
@@ -19,7 +20,7 @@ class UserKNN(RecSys):
     Recommends base on the similarity between users
     """
 
-    def __init__(self, alpha=0.5, asym=True, knn=np.inf, h=0, qfunc=None):
+    def __init__(self, alpha=0.5, asym=True, knn=np.inf, h=0, qfunc=None, splus=False):
         """
         Constructor
 
@@ -46,18 +47,23 @@ class UserKNN(RecSys):
         self.h = np.float32(h)
         self.qfunc = qfunc
         self.knn = knn
+        self.splus = splus
 
     def compute_similarity(self, dataset=None):
         print("computing similarity between users ...")
         start = timer()
         # Compute cosine similarity between users
-        s = cosine_similarity(dataset.T, alpha=self.alpha, asym=self.asym, h=self.h, dtype=np.float32)
+        if self.splus:
+            s = sim.s_plus(dataset, k=self.knn)
+        else:
+            s = cosine_similarity(dataset.T, alpha=self.alpha, asym=self.asym, h=self.h, dtype=np.float32)
         print("elapsed time: {:.3f}s\n".format(timer() - start))
 
-        print("computing similarity knn...")
-        start = timer()
-        s = knn(s, self.knn)
-        print("elapsed: {:.3f}s\n".format(timer() - start))
+        if not self.splus:
+            print("computing similarity knn...")
+            start = timer()
+            s = knn(s, self.knn)
+            print("elapsed: {:.3f}s\n".format(timer() - start))
 
         return s
 
