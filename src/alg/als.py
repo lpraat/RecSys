@@ -20,8 +20,9 @@ class ALS(RecSys):
     def rate(self, dataset):
         model = als(factors=self.factors, iterations=self.iterations, regularization=self.reg)
         model.fit(dataset.T)
-        ratings = np.dot(model.user_factors, model.item_factors.T)
-        return sp.csr_matrix(ratings)
+        user_factors = sp.csr_matrix(model.user_factors)
+        item_factors = sp.csr_matrix(model.item_factors)
+        return user_factors * item_factors.T
 
 
 
