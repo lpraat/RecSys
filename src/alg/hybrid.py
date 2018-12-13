@@ -41,12 +41,12 @@ class Hybrid(RecSys):
             raise RuntimeError("You already called rate")
 
         # Compute combined ratings
-        ratings = sp.csr_matrix(dataset.shape, dtype=np.float32)
+        ratings = sp.csr_matrix((len(targets), dataset.shape[1]), dtype=np.float32)
 
         while self.models:
 
             model, w = self.models.pop()
-            model_ratings = model.rate(dataset).tocsr()
+            model_ratings = model.rate(dataset, targets).tocsr()
 
             if self.normalize:
                 for i in range(ratings.shape[0]):

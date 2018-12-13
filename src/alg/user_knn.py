@@ -67,7 +67,7 @@ class UserKNN(RecSys):
         print("computing ratings ...")
         start = timer()
         # Compute ratings
-        ratings = (dataset[targets, :].T * s).tocsr()
+        ratings = (dataset.T * s).tocsr()
         print("elapsed time: {:.3f}s\n".format(timer() - start))
         del s
-        return ratings.T
+        return ratings.T[targets, :]
