@@ -7,7 +7,6 @@ of each item for each user.
 from timeit import default_timer as timer
 
 import numpy as np
-import similaripy as sim
 
 from .recsys import RecSys
 from .utils import cosine_similarity, knn
@@ -53,26 +52,22 @@ class UserKNN(RecSys):
         print("computing similarity between users ...")
         start = timer()
         # Compute cosine similarity between users
-        if self.splus:
-            s = sim.s_plus(dataset, k=self.knn)
-        else:
-            s = cosine_similarity(dataset.T, alpha=self.alpha, asym=self.asym, h=self.h, dtype=np.float32)
+        s = cosine_similarity(dataset.T, alpha=self.alpha, asym=self.asym, h=self.h, dtype=np.float32)
         print("elapsed time: {:.3f}s\n".format(timer() - start))
 
-        if not self.splus:
-            print("computing similarity knn...")
-            start = timer()
-            s = knn(s, self.knn)
-            print("elapsed: {:.3f}s\n".format(timer() - start))
+        print("computing similarity knn...")
+        start = timer()
+        s = knn(s, self.knn)
+        print("elapsed: {:.3f}s\n".format(timer() - start))
 
         return s
 
-    def rate(self, dataset):
+    def rate(self, dataset, targets):
         s = self.compute_similarity(dataset)
         print("computing ratings ...")
         start = timer()
         # Compute ratings
-        ratings = (dataset.T * s).tocsr()
+        ratings = (dataset[targets, :].T * s).tocsr()
         print("elapsed time: {:.3f}s\n".format(timer() - start))
         del s
         return ratings.T

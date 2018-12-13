@@ -59,16 +59,16 @@ class Slim(RecSys):
 
         return s
 
-    def rate(self, dataset):
+    def rate(self, dataset, targets):
 
         s = self.compute_similarity(dataset)
 
         print("Computing Slim ratings...")
         start = time.time()
         if self.dual:
-            ratings = (dataset.T * s).tocsr()
+            ratings = (dataset[targets, :].T * s).tocsr()
         else:
-            ratings = (dataset * s).tocsr()
+            ratings = (dataset[targets, :] * s).tocsr()
         print("elapsed: {:.3f}s\n".format(time.time() - start))
         del s
 

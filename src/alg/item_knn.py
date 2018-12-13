@@ -7,7 +7,6 @@ of each item for each user.
 from timeit import default_timer as timer
 
 import numpy as np
-import similaripy as sim
 
 from .recsys import RecSys
 from .utils import cosine_similarity, knn
@@ -57,10 +56,7 @@ class ItemKNN(RecSys):
         print("computing similarity ...")
         start = timer()
         # Compute similarity matrix
-        if self.splus:
-            s = sim.s_plus(dataset.T, k=self.knn)
-        else:
-            s = cosine_similarity(dataset, alpha=self.alpha, asym=self.asym, h=self.h, dtype=np.float32)
+        s = cosine_similarity(dataset, alpha=self.alpha, asym=self.asym, h=self.h, dtype=np.float32)
         print("elapsed: {:.3f}s\n".format(timer() - start))
 
         # Compute similarity for features
@@ -84,17 +80,13 @@ class ItemKNN(RecSys):
                 print("computing similarity for feature {} ...".format(feature_i))
                 start = timer()
                 # Compute similarity matrix
-
-                if self.splus:
-                    s += sim.s_plus(feature.T)
-                else:
-                    s += cosine_similarity(
-                        feature,
-                        alpha=feature_alpha,
-                        asym=feature_asym,
-                        h=feature_h,
-                        dtype=np.float32
-                    ) * feature_w
+                s += cosine_similarity(
+                    feature,
+                    alpha=feature_alpha,
+                    asym=feature_asym,
+                    h=feature_h,
+                    dtype=np.float32
+                ) * feature_w
                 print("elapsed: {:.3f}s\n".format(timer() - start))
 
             else:
@@ -103,20 +95,21 @@ class ItemKNN(RecSys):
             # Next feature
             feature_i += 1
 
-        if not self.splus:
-            print("computing similarity knn...")
-            start = timer()
-            s = knn(s, self.knn)
-            print("elapsed: {:.3f}s\n".format(timer() - start))
+        print("computing similarity knn...")
+        start = timer()
+        s = knn(s, self.knn)
+        print("elapsed: {:.3f}s\n".format(timer() - start))
 
         return s
 
-    def rate(self, dataset):
+    def rate(self, dataset, targets):
         s = self.compute_similarity(dataset)
         print("computing ratings ...")
         start = timer()
+
+        print(len(targets))
         # Compute playlist-track ratings
-        ratings = (dataset * s).tocsr()
+        ratings = (dataset[targets, :] * s).tocsr()
         print("elapsed: {:.3f}s\n".format(timer() - start))
         del s
 

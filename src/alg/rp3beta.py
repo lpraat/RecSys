@@ -98,12 +98,12 @@ class RP3Beta(RecSys):
 
         return s
 
-    def rate(self, dataset):
+    def rate(self, dataset, targets):
         s = self.compute_similarity(dataset)
 
         print("Computing rp3beta ratings...")
         start = time.time()
-        ratings = (dataset * s).tocsr()
+        ratings = (dataset[targets, :] * s).tocsr()
         print("elapsed: {:.3f}s\n".format(time.time() - start))
         del s
         return ratings

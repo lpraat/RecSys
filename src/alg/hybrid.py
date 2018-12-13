@@ -35,7 +35,7 @@ class Hybrid(RecSys):
         self.models = list(models)
         self.normalize = normalize
 
-    def rate(self, dataset):
+    def rate(self, dataset, targets):
 
         if not self.models:
             raise RuntimeError("You already called rate")

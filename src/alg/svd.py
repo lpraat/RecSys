@@ -19,7 +19,7 @@ class SVD(RecSys):
         s = vt.T * vt
         return s
 
-    def rate(self, dataset):
+    def rate(self, dataset, targets):
         s = self.compute_similarity(dataset)
         s = knn(s, self.knn)
-        return dataset * s
+        return dataset[targets, :] * s

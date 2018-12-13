@@ -48,18 +48,17 @@ class HybridSimilarity(RecSys):
         s = knn(s, self.knn)
         return s
 
-    def rate(self, dataset):
+    def rate(self, dataset, targets):
         s = self.compute_similarity(dataset)
 
         print("computing ratings ...")
         start = timer()
         if self.mode == 'item':
-            ratings = (dataset * s).tocsr()
+            ratings = (dataset[targets, :] * s).tocsr()
         else:
-            ratings = (dataset.T * s).tocsr()
+            ratings = (dataset[targets, :].T * s).tocsr()
         del s
         print("elapsed: {:.3f}s\n".format(timer() - start))
-
 
         if self.mode == 'item':
             return ratings

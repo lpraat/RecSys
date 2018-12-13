@@ -46,7 +46,7 @@ class RecSys:
             Input (user x items) interactions matrix to use
             If a sparse matrix is provided it should be in csr format
             If a string is passed, it searches for it in the global cache
-        targets : list
+        targets : string
             An ordered list of users for which to compute the predictions
             If no list is provided, predictions are computed for all users
             of the input interactions matrix
@@ -68,18 +68,18 @@ class RecSys:
             targets = range(dataset.shape[0])
 
         # Compute ratings
-        ratings = self.rate(dataset)
+        ratings = self.rate(dataset, targets)
 
         print("predicting ...")
         start = timer()
         # Predict
-        preds = predict(ratings, targets=targets, k=k, mask=dataset, invert_mask=True)
+        preds = predict(ratings, targets=targets, k=k, mask=dataset[targets, :], invert_mask=True)
         print("elapsed: {:.3f}s\n".format(timer() - start))
         del ratings
 
         return preds
 
-    def evaluate(self, train_set="train_set", test_set="test_set", targets=None, k=10):
+    def evaluate(self, train_set="train_set", test_set="test_set", targets="targets", k=10):
         """
         Evaluate system using a train set and a test set
 
@@ -116,7 +116,7 @@ class RecSys:
         """
         raise NotImplementedError
 
-    def rate(self, dataset):
+    def rate(self, dataset, targets):
         """
         Computes items ratings for target users
 
