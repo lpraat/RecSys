@@ -54,8 +54,7 @@ class Hybrid(RecSys):
                     end_data = model_ratings.indptr[i+1]
 
                     row_data = model_ratings.data[start_data:end_data]
-                    row_max = np.max(row_data)
-                    row_data /= row_max
+                    row_data = normalize(np.array(row_data).reshape(1, -1), norm='l2')
                     row_data *= w
 
             ratings += model_ratings
