@@ -66,14 +66,14 @@ class Slim(RecSys):
         print("Computing Slim ratings...")
         start = time.time()
         if self.dual:
-            ratings = (dataset[targets, :].T * s).tocsr()
+            ratings = (dataset.T * s).tocsr()
         else:
             ratings = (dataset[targets, :] * s).tocsr()
         print("elapsed: {:.3f}s\n".format(time.time() - start))
         del s
 
         if self.dual:
-            return ratings.T
+            return ratings.T[targets, :]
         else:
             return ratings
 
