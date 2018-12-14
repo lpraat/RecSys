@@ -1,19 +1,19 @@
+from src.alg.als import ALS
 from src.alg.hybrid import Hybrid
-from src.alg.hybrid_similarity import HybridSimilarity
 from src.alg.item_knn import ItemKNN
-from src.alg.slim import Slim
-from src.alg.user_knn import UserKNN
 from src.data import Cache
 import matplotlib.pyplot as plt
 
 from src.metrics import ap_at_k
 
 cache = Cache()
+targets = cache.fetch("targets")
+train_set = cache.fetch("train_set")
+test_set = cache.fetch("test_set")
+interactions = cache.fetch("interactions").tocsr()
 
 
 def tracks_per_playlist():
-    targets = cache.fetch("targets")
-    interactions = cache.fetch("interactions").tocsr()
 
     res = {}
     for target in targets:
@@ -38,6 +38,9 @@ def targets_with_num():
     return res
 
 
+targets_num = targets_with_num()
+
+
 def plot_tracks_per_playlist():
     res = tracks_per_playlist()
     playlist_len = [playlist_len for playlist_len, _ in res.items()]
@@ -46,12 +49,34 @@ def plot_tracks_per_playlist():
     plt.show()
 
 
+# Define a cluster split here
+# automatically a cluster of [41, +infinite) is defined
+clusters = [[0, 10], [11, 20], [21, 30], [31, 40]]
+
+
+def determine_cluster(playlist):
+    num = targets_num[playlist]
+
+    for i, (lower, upper) in enumerate(clusters, 1):
+        if lower <= num <= upper:
+            return i
+    return len(clusters) + 1
+
+
+def tracks_per_cluster():
+    res = {}
+    for target in targets:
+        cluster = determine_cluster(target)
+        if cluster not in res:
+            res[cluster] = 1
+        else:
+            res[cluster] += 1
+
+    return res
+
+
 def plot_model_per_length(names_models):
-    targets = cache.fetch("targets")
-    train_set = cache.fetch("train_set")
-    targets_num = targets_with_num()
-    test_set = cache.fetch("test_set")
-    x_axis = list(set([v for v in targets_num.values()]))
+    x_axis = list([i for i in range(1, len(clusters) + 2)])
 
     models_preds = []
 
@@ -62,10 +87,12 @@ def plot_model_per_length(names_models):
         for playlist, preds in model_preds.items():
             score = ap_at_k(preds, test_set[playlist])
 
-            if targets_num[playlist] in model_res:
-                model_res[targets_num[playlist]] += [score]
+            cluster = determine_cluster(playlist)
+
+            if cluster in model_res:
+                model_res[cluster] += [score]
             else:
-                model_res[targets_num[playlist]] = [score]
+                model_res[cluster] = [score]
 
         for k, v in model_res.items():
             model_res[k] = sum(v) / len(v)
@@ -83,15 +110,7 @@ def plot_model_per_length(names_models):
 # Plot tracks per playlist
 # plot_tracks_per_playlist()
 
-# Models to evaluate
-# forzajuve.csv in kaggle
-h1 = HybridSimilarity((ItemKNN(("artist_set", 0.1, {}), ("album_set", 0.2, {})), 0.7),
-                      (Slim(lambda_i=0.025, lambda_j=0.025, all_dataset=False, epochs=3, lr=0.1), 0.3))
-m1 = Hybrid((h1, 0.85), (UserKNN(knn=190), 0.15))
-
-# user_item hybrid
-ui = Hybrid((ItemKNN(("artist_set", 0.1, {}),("album_set", 0.2, {})),0.4),(UserKNN(knn=64), 0.2), normalize=False)
-
-plot_model_per_length([("forzajuve", m1),
-                       ("user_item_hybrid", ui)])
-
+# Plot Models to evaluate on defined clusters
+print(tracks_per_cluster())
+plot_model_per_length([("item_knn", ItemKNN()), ("als", ALS(factors=200, iterations=50)),
+                       ("hybrid", Hybrid((ItemKNN(), 0.9), (ALS(factors=200, iterations=50), 0.1)))])
