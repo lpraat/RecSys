@@ -49,14 +49,10 @@ class Hybrid(RecSys):
             model_ratings = model.rate(dataset, targets).tocsr()
 
             if self.normalize:
-                for i in range(ratings.shape[0]):
-                    start_data = model_ratings.indptr[i]
-                    end_data = model_ratings.indptr[i+1]
+                model_ratings = normalize(model_ratings, norm='l2', axis=1)
+ 
 
-                    row_data = model_ratings.data[start_data:end_data]
-                    row_data = normalize(np.array(row_data).reshape(1, -1), norm='l2')
-                    row_data *= w
-
+            model_ratings = model_ratings * w
             ratings += model_ratings
             del model_ratings
 
