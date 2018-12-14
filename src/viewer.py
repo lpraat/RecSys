@@ -92,6 +92,6 @@ m1 = Hybrid((h1, 0.85), (UserKNN(knn=190), 0.15))
 # user_item hybrid
 ui = Hybrid((ItemKNN(("artist_set", 0.1, {}),("album_set", 0.2, {})),0.4),(UserKNN(knn=64), 0.2), normalize=False)
 
-plot_model_per_length([("forzajuve", ItemKNN(("album_set", 0.2, {}), ("artist_set", 0.1, {}))),
+plot_model_per_length([("forzajuve", m1),
                        ("user_item_hybrid", ui)])
 
