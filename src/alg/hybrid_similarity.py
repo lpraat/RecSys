@@ -41,7 +41,6 @@ class HybridSimilarity(RecSys):
             model_similarity = model_similarity * w
 
             s += model_similarity
-            del model_similarity
 
         if self.normalize:
             s = normalize(s, norm='l2', axis=1)
@@ -49,6 +48,7 @@ class HybridSimilarity(RecSys):
         return s
 
     def rate(self, dataset, targets):
+        print("Using all dataset " + str(dataset.nnz))
         s = self.compute_similarity(dataset)
 
         print("computing ratings ...")

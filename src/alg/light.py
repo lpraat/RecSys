@@ -25,15 +25,24 @@ class Light(RecSys):
                              loss=self.loss,
                              learning_rate=self.learning_rate)
 
+        self.cache = False
+
     def compute_similarity(self, dataset):
         raise NotImplementedError
 
     def rate(self, dataset, targets):
-        print("training light ...")
-        self.model.fit(interactions=dataset,
-                       epochs=self.epochs,
-                       num_threads=self.num_threads,
-                       verbose=True)
+
+        print("Using all dataset " + str(dataset.nnz))
+
+        if not self.cache:
+            print("training light ...")
+            self.model.fit(interactions=dataset,
+                           epochs=self.epochs,
+                           num_threads=self.num_threads,
+                           verbose=True)
+            self.cache = True
+        else:
+            print("light already trained, using cache ...")
 
         print("computing ratings ...")
         ratings = np.empty((len(targets), dataset.shape[1]), dtype=np.float32)

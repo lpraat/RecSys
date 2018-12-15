@@ -4,7 +4,6 @@ This file contains the Ensemble recommender which combines different models.
 
 import numpy as np
 import scipy.sparse as sp
-import time
 from sklearn.preprocessing import normalize
 
 from .recsys import RecSys
@@ -36,6 +35,7 @@ class Hybrid(RecSys):
         self.normalize = normalize
 
     def rate(self, dataset, targets):
+        print("Using all dataset " + str(dataset.nnz))
 
         if not self.models:
             raise RuntimeError("You already called rate")
@@ -50,7 +50,6 @@ class Hybrid(RecSys):
 
             if self.normalize:
                 model_ratings = normalize(model_ratings, norm='l2', axis=1)
- 
 
             model_ratings = model_ratings * w
             ratings += model_ratings

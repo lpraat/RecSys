@@ -1,19 +1,21 @@
 from src.alg.als import ALS
 from src.alg.hybrid import Hybrid
+from src.alg.hybrid_similarity import HybridSimilarity
 from src.alg.item_knn import ItemKNN
+from src.alg.light import Light
+from src.alg.slim import Slim
+from src.alg.user_knn import UserKNN
 from src.data import Cache
 import matplotlib.pyplot as plt
 
-from src.metrics import ap_at_k
+from src.metrics import ap_at_k, evaluate
 
 cache = Cache()
-targets = cache.fetch("targets")
-train_set = cache.fetch("train_set")
-test_set = cache.fetch("test_set")
-interactions = cache.fetch("interactions").tocsr()
 
 
 def tracks_per_playlist():
+    interactions = cache.fetch("interactions").tocsr()
+    targets = cache.fetch("targets")
 
     res = {}
     for target in targets:
@@ -26,9 +28,13 @@ def tracks_per_playlist():
     return res
 
 
-def targets_with_num():
+def targets_with_num(test=False):
     targets = cache.fetch("targets")
-    interactions = cache.fetch("train_set").tocsr()
+
+    if test:
+        interactions = cache.fetch("train_set").tocsr()
+    else:
+        interactions = cache.fetch("train_set").tocsr()
 
     res = {}
     for target in targets:
@@ -64,6 +70,7 @@ def determine_cluster(playlist):
 
 
 def tracks_per_cluster():
+    targets = cache.fetch("targets")
     res = {}
     for target in targets:
         cluster = determine_cluster(target)
@@ -77,12 +84,17 @@ def tracks_per_cluster():
 
 def plot_model_per_length(names_models):
     x_axis = list([i for i in range(1, len(clusters) + 2)])
+    targets = cache.fetch("targets")
+    train_set = cache.fetch("train_set")
+    test_set = cache.fetch("test_set")
 
     models_preds = []
 
     for name, model in names_models:
         model_res = {}
         model_preds = model.run(dataset=train_set, targets=targets)
+        print("MAP of " + str(name))
+        print(evaluate(model_preds, test_set))
 
         for playlist, preds in model_preds.items():
             score = ap_at_k(preds, test_set[playlist])
@@ -101,16 +113,44 @@ def plot_model_per_length(names_models):
 
     for model_name, model_res in models_preds:
         values = [v for v in model_res.values()]
+        print(values)
         plt.plot(x_axis, values, label=model_name)
         plt.plot()
     plt.legend()
     plt.show()
 
 
-# Plot tracks per playlist
-# plot_tracks_per_playlist()
+if __name__ == '__main__':
+    # Plot tracks per playlist
+    # plot_tracks_per_playlist()
 
-# Plot Models to evaluate on defined clusters
-print(tracks_per_cluster())
-plot_model_per_length([("item_knn", ItemKNN()), ("als", ALS(factors=200, iterations=50)),
-                       ("hybrid", Hybrid((ItemKNN(), 0.9), (ALS(factors=200, iterations=50), 0.1)))])
+    def create(slim, light, als, w1, w2):
+        h1 = HybridSimilarity((ItemKNN(("artist_set", 0.1, {}), ("album_set", 0.2, {})), 0.7),
+                              (slim, 0.3))
+        forzajuve = Hybrid((h1, 0.85), (UserKNN(knn=190), 0.15))
+
+        return Hybrid((forzajuve, w1), (Hybrid((light, 0.5), (als,0.5)), w2))
+
+    slim = Slim(lambda_i=0.025, lambda_j=0.025, all_dataset=False, epochs=3, lr=0.1)
+
+    h1 = HybridSimilarity((ItemKNN(("artist_set", 0.1, {}), ("album_set", 0.2, {})), 0.7),
+                          (slim, 0.3))
+    forzajuve = Hybrid((h1, 0.85), (UserKNN(knn=190), 0.15))
+
+    l = Light(no_components=300, epochs=30, loss='warp')
+    a = ALS(factors=1024, iterations=2)
+
+    la1 = create(slim, l, a, 0.9, 0.1)
+    la2 = create(slim, l, a, 0.8, 0.2)
+    la3 = create(slim, l, a, 0.7, 0.3)
+    la4 = create(slim, l, a, 0.6, 0.4)
+    la5 = create(slim, l, a, 0.5, 0.5)
+
+    # Plot Models to evaluate on defined clusters
+    print(tracks_per_cluster())
+    plot_model_per_length([("forzajuve", forzajuve),
+                           ("9-1", la1),
+                           ("8-2", la2),
+                           ("7-3", la3),
+                           ("6-4", la4),
+                           ("5-5", la5)])

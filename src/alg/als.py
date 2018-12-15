@@ -22,12 +22,21 @@ class ALS(RecSys):
                          use_gpu=self.use_gpu,
                          num_threads=self.num_threads)
 
+        self.cached = False
+
     def compute_similarity(self, dataset):
         raise NotImplementedError
 
     def rate(self, dataset, targets):
-        print("training als ...")
-        self.model.fit(dataset.T)
+
+        print("Using all dataset " + str(dataset.nnz))
+
+        if not self.cached:
+            print("training als ...")
+            self.model.fit(dataset.T)
+            self.cached = True
+        else:
+            print("als was already trained, using cache ...")
 
         print("computing ratings ...")
         ratings = np.empty((len(targets), dataset.shape[1]), dtype=np.float32)

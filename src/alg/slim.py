@@ -29,7 +29,15 @@ class Slim(RecSys):
         self.num_interactions = None
         self.bpr_sampler = None
 
+        self.cached = False
+        self.s = False
+
     def compute_similarity(self, dataset):
+
+        print("Using all dataset " + str(dataset.nnz))
+        if self.cached:
+            print("Model was already trained, using cache...")
+            return self.s
         if self.all_dataset:
             urm = self.cache.fetch("interactions")
         else:
@@ -57,6 +65,9 @@ class Slim(RecSys):
         s = knn(s.T, knn=self.knn)
         print("elapsed: {:.3f}s\n".format(time.time() - start))
 
+        self.cached = True
+        self.s = s
+
         return s
 
     def rate(self, dataset, targets):
@@ -70,7 +81,6 @@ class Slim(RecSys):
         else:
             ratings = (dataset[targets, :] * s).tocsr()
         print("elapsed: {:.3f}s\n".format(time.time() - start))
-        del s
 
         if self.dual:
             return ratings.T[targets, :]

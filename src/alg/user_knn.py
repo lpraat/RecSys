@@ -63,6 +63,7 @@ class UserKNN(RecSys):
         return s
 
     def rate(self, dataset, targets):
+        print("Using all dataset " + str(dataset.nnz))
         s = self.compute_similarity(dataset)
         print("computing ratings ...")
         start = timer()
