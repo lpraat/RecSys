@@ -6,7 +6,9 @@ import os
 import pickle
 
 from src.alg import ItemKNN, Hybrid, UserKNN
+from src.alg.als import ALS
 from src.alg.hybrid_similarity import HybridSimilarity
+from src.alg.light import Light
 from src.alg.p3alpha import P3Alpha
 from src.alg.rp3beta import RP3Beta
 from src.alg.slim import Slim
@@ -25,7 +27,7 @@ def evaluate_preds(preds, test_set):
 
 def write_preds(path, name, model, dataset, targets=cache.fetch("targets")):
 
-    ratings = model.rate(dataset.tocsr())
+    ratings = model.rate(dataset.tocsr(), targets)
     preds = predict(ratings, targets=targets, k=10, mask=dataset, invert_mask=True)
     del ratings
     # Create directory if necessary
@@ -55,7 +57,7 @@ def build_preds(path, filename):
     return preds
 
 
-def initialize_sets(k=5):
+def initialize_sets(k=10):
     for i in range(k):
 
         print(i)
@@ -76,43 +78,52 @@ def initialize_sets(k=5):
         with open(rel_path_sets + "/test.obj", "wb") as f:
             pickle.dump(test_set, f)
 
-        hybrid_graph = HybridSimilarity((P3Alpha(knn=1024, alpha=1), 0.15),
-                                        (RP3Beta(knn=1024, alpha=1, beta=0.5), 0.95))
-        write_preds(path=rel_path_preds, name="hybrid_graph", model=hybrid_graph, dataset=train_set)
+        def create(w1, w2):
+            slim = Slim(lambda_i=0.025, lambda_j=0.025, all_dataset=False, epochs=3, lr=0.1)
+            light = Light(no_components=300, epochs=30, loss='warp')
+            als = ALS(factors=1024, iterations=2)
 
+            h1 = HybridSimilarity((ItemKNN(("artist_set", 0.1, {}), ("album_set", 0.2, {})), 0.7),
+                                  (slim, 0.3))
+            forzajuve = Hybrid((h1, 0.85), (UserKNN(knn=190), 0.15))
+
+            return Hybrid((forzajuve, w1), (Hybrid((light, 0.5), (als, 0.5)), w2))
+
+        m1 = create(0.8, 0.2)
+        write_preds(path=rel_path_preds, name="8-2", model=m1, dataset=train_set)
         print("map")
-        preds = build_preds(rel_path_preds, "hybrid_graph")
+        preds = build_preds(rel_path_preds, "8-2")
         print(evaluate(preds, test_set))
 
-        hybrid_item_user = Hybrid((ItemKNN(("artist_set", 0.1, {}), ("album_set", 0.2, {})), 0.3),
-                                  (UserKNN(knn=200), 0.2))
-        write_preds(path=rel_path_preds, name="hybrid_item_user", model=hybrid_item_user, dataset=train_set)
-
+        m2 = create(0.7, 0.3)
+        write_preds(path=rel_path_preds, name="7-3", model=m2, dataset=train_set)
         print("map")
-        preds = build_preds(rel_path_preds, "hybrid_item_user")
+        preds = build_preds(rel_path_preds, "7-3")
         print(evaluate(preds, test_set))
 
-        double_slim = HybridSimilarity((Slim(epochs=1, lr=0.1, lambda_i=0.01, all_dataset=False), 0.5),
-                                       (Slim(epochs=1, lr=0.1, lambda_j=0.01, all_dataset=False), 0.5))
-        write_preds(path=rel_path_preds, name="double_slim", model=double_slim, dataset=train_set)
-
+        m3 = create(0.6, 0.4)
+        write_preds(path=rel_path_preds, name="6-4", model=m3, dataset=train_set)
         print("map")
-        preds = build_preds(rel_path_preds, "double_slim")
+        preds = build_preds(rel_path_preds, "6-4")
         print(evaluate(preds, test_set))
 
-        slim = Slim(epochs=3, lr=0.1, lambda_i=0.025, lambda_j=0.025, all_dataset=False)
-        write_preds(path=rel_path_preds, name="slim", model=slim, dataset=train_set)
-
+        m4 = create(0.4, 0.6)
+        write_preds(path=rel_path_preds, name="4-6", model=m4, dataset=train_set)
         print("map")
-        preds = build_preds(rel_path_preds, "slim")
+        preds = build_preds(rel_path_preds, "4-6")
         print(evaluate(preds, test_set))
 
-        h1 = HybridSimilarity((ItemKNN(("artist_set", 0.1, {}), ("album_set", 0.2, {})), 0.7),
-                              (Slim(lambda_i=0.025, lambda_j=0.025, all_dataset=False, epochs=3, lr=0.1), 0.3))
-        m1 = Hybrid((h1, 0.85), (UserKNN(knn=190), 0.15))
-        write_preds(path=rel_path_preds, name="forzajuve", model=m1, dataset=train_set)
-
+        m5 = create(0.3, 0.7)
+        write_preds(path=rel_path_preds, name="3-7", model=m5, dataset=train_set)
         print("map")
-        preds = build_preds(rel_path_preds, "forzajuve")
+        preds = build_preds(rel_path_preds, "3-7")
         print(evaluate(preds, test_set))
+
+        m6 = create(0.2, 0.8)
+        write_preds(path=rel_path_preds, name="2-8", model=m6, dataset=train_set)
+        print("map")
+        preds = build_preds(rel_path_preds, "2-8")
+        print(evaluate(preds, test_set))
+
+
 
