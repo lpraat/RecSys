@@ -9,7 +9,7 @@ from implicit.als import AlternatingLeastSquares as als
 
 class ALS(RecSys):
 
-    def __init__(self, factors=10, iterations=10, reg=0.01, use_gpu=False, num_threads=mp.cpu_count()):
+    def __init__(self, factors=10, iterations=10, reg=0.01, use_gpu=False, knn=1000, num_threads=mp.cpu_count()):
         super().__init__()
         self.factors = factors
         self.iterations = iterations
@@ -23,6 +23,7 @@ class ALS(RecSys):
                          num_threads=self.num_threads)
 
         self.cached = False
+        self.knn = knn
 
     def compute_similarity(self, dataset):
         raise NotImplementedError
@@ -44,7 +45,7 @@ class ALS(RecSys):
             if i % 1000 == 0:
                 print(f"computed ratings for {i} playlists")
 
-            r = self.model.recommend(userid=target, user_items=dataset, filter_already_liked_items=False, N=1000)
+            r = self.model.recommend(userid=target, user_items=dataset, filter_already_liked_items=False, N=self.knn)
 
             items = []
             rates = []
