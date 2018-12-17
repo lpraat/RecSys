@@ -21,7 +21,7 @@ class Callable:
     kwargs : dict
         Callable's named arguments.
     """
-    def __init__(self, obj, args=None, kwargs=None):
+    def __init__(self, obj, args=[], kwargs={}):
         self.obj = obj
         self.args = args
         self.kwargs = kwargs
