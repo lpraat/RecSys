@@ -58,21 +58,3 @@ def evaluate(preds, targets, k=10):
         ap += ap_at_k(pred, values, k=min(len(values), k))
 
     return ap / len(targets)
-
-
-def leave_one_out(preds, test_set, k=10):
-    """
-    Given the predictions and a test set, evaluates the performance
-    based on the number of playlists whose test song is listed
-    in the first k predictions
-    """
-
-    score = 0
-
-    for i, pred in enumerate(preds):
-        test_set_i = test_set[i]
-        for test_elem in test_set_i:
-            if test_elem in pred:
-                score += 1
-
-    return score / len(preds)

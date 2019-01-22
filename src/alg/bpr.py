@@ -7,7 +7,6 @@ class BPRSampler:
         self.lil_urm = urm.tolil()
 
     def sample(self):
-
         while True:
 
             # Get a random user and its interactions

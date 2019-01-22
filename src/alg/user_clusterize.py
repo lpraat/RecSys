@@ -12,8 +12,6 @@ from .utils import clusterize
 
 
 class UserClusterize(RecSys):
-
-
     def __init__(self, model, k=4):
         """
         Constructor
@@ -33,9 +31,7 @@ class UserClusterize(RecSys):
         self.model = model
         self.k = k
 
-    
     def run(self, dataset=None, targets=None, k=10):
-
         # Get dataset
         if dataset is not None:
             dataset = self.cache.fetch(dataset) if isinstance(dataset, str) else dataset
@@ -54,6 +50,7 @@ class UserClusterize(RecSys):
 
         # Run model on clusters
         global run_model
+
         def run_model(subset):
             return self.model.run(subset, k=k)
 

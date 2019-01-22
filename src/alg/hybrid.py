@@ -14,7 +14,7 @@ class Hybrid(RecSys):
     Ensemble recommender.
 
     Recommends items to users by combining ratings from different
-    models according to a defined distribution.
+    models.
     """
 
     def __init__(self, *models, normalize=True):
@@ -24,7 +24,7 @@ class Hybrid(RecSys):
         Parameters
         -----------
         *models : RecSys
-            List of recommender system to combine when computing final ratings
+            List of recommender systems to combine when computing final ratings
         """
 
         # Super constructor
@@ -35,8 +35,6 @@ class Hybrid(RecSys):
         self.normalize = normalize
 
     def rate(self, dataset, targets):
-        print("Using all dataset " + str(dataset.nnz))
-
         if not self.models:
             raise RuntimeError("You already called rate")
 

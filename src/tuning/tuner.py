@@ -21,6 +21,7 @@ class Callable:
     kwargs : dict
         Callable's named arguments.
     """
+
     def __init__(self, obj, args=[], kwargs={}):
         self.obj = obj
         self.args = args
@@ -37,6 +38,7 @@ class Hyperparameter:
     interval : list
         Hyperparameter search space.
     """
+
     def __init__(self, name, interval):
         self.name = name
         self.interval = interval
@@ -77,6 +79,7 @@ class HyperparameterTuner:
         Container to store the evaluation results.
 
     """
+
     def __init__(self, callable_model, cartesian_product=False, write_to_file=True, max_resample=1000):
         """Main constructor.
 
@@ -125,7 +128,6 @@ class HyperparameterTuner:
         # Dict to store the results obtained for different combination for hyperparameters
         # Key -> Tuple(h1, h2, ..., hn) where hi is the ith hyperparameter value -> MAP@K
         self.history = dict()
-
 
     @staticmethod
     def is_callable(entity):
@@ -338,4 +340,3 @@ class HyperparameterTuner:
         except KeyboardInterrupt:
             print("Interrupted tuning, printing results ...")
             self.print_history()
-

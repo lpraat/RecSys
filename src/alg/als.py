@@ -1,14 +1,13 @@
+import multiprocessing as mp
+
 import numpy as np
 import scipy.sparse as sp
-import multiprocessing as mp
+from implicit.als import AlternatingLeastSquares as als
 
 from src.alg.recsys import RecSys
 
-from implicit.als import AlternatingLeastSquares as als
-
 
 class ALS(RecSys):
-
     def __init__(self, factors=10, iterations=10, reg=0.01, use_gpu=False, knn=1000, num_threads=mp.cpu_count()):
         super().__init__()
         self.factors = factors
@@ -16,29 +15,17 @@ class ALS(RecSys):
         self.reg = reg
         self.use_gpu = use_gpu
         self.num_threads = num_threads
+        self.knn = knn
         self.model = als(factors=self.factors,
                          iterations=self.iterations,
                          regularization=self.reg,
                          use_gpu=self.use_gpu,
                          num_threads=self.num_threads)
 
-        self.cached = False
-        self.knn = knn
-
     def compute_similarity(self, dataset):
         raise NotImplementedError
 
     def rate(self, dataset, targets):
-
-        print("Using all dataset " + str(dataset.nnz))
-
-        if not self.cached:
-            print("training als ...")
-            self.model.fit(dataset.T)
-            self.cached = True
-        else:
-            print("als was already trained, using cache ...")
-
         print("computing ratings ...")
         ratings = np.empty((len(targets), dataset.shape[1]), dtype=np.float32)
         for i, target in enumerate(targets):
@@ -58,10 +45,3 @@ class ALS(RecSys):
             ratings[i] = new_row
 
         return sp.csr_matrix(ratings, dtype=np.float32)
-
-
-
-
-
-
-

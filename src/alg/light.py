@@ -1,8 +1,8 @@
-from lightfm import LightFM
+import multiprocessing as mp
 
 import numpy as np
 import scipy.sparse as sp
-import multiprocessing as mp
+from lightfm import LightFM
 
 from src.alg.recsys import RecSys
 from src.const import NUM_TRACKS
@@ -20,32 +20,16 @@ class Light(RecSys):
         self.epochs = epochs
         self.num_threads = num_threads
         self.knn = knn
-
         self.model = LightFM(no_components=self.no_components,
                              learning_schedule=self.learning_schedule,
                              loss=self.loss,
                              learning_rate=self.learning_rate,
                              )
 
-        self.cached = False
-
     def compute_similarity(self, dataset):
         raise NotImplementedError
 
     def rate(self, dataset, targets):
-
-        print("Using all dataset " + str(dataset.nnz))
-
-        if not self.cached:
-            print("training light ...")
-            self.model.fit(interactions=dataset,
-                           epochs=self.epochs,
-                           num_threads=self.num_threads,
-                           verbose=True)
-            self.cached = True
-        else:
-            print("light already trained, using cache ...")
-
         print("computing ratings ...")
         ratings = np.empty((len(targets), dataset.shape[1]), dtype=np.float32)
         tracks = [i for i in range(NUM_TRACKS)]

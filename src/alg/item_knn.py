@@ -19,7 +19,7 @@ class ItemKNN(RecSys):
     Recommends items based on the similarity between items
     """
 
-    def __init__(self, *features, alpha=0.5, asym=True, knn=np.inf, h=0, qfunc=None, splus=False):
+    def __init__(self, *features, alpha=0.5, asym=True, knn=np.inf, h=0):
         """
         Constructor
 
@@ -37,8 +37,6 @@ class ItemKNN(RecSys):
             Limit influence to knn most similar items
         h : scalar
             Shrink term
-        qfunc : lambda
-            A function individually applied to similarities
         """
         # Super constructor
         super().__init__()
@@ -47,10 +45,8 @@ class ItemKNN(RecSys):
         self.alpha = np.float32(alpha)
         self.asym = asym
         self.h = np.float32(h)
-        self.qfunc = qfunc
         self.knn = knn
         self.features = features
-        self.splus = splus
 
     def compute_similarity(self, dataset=None):
         print("computing similarity ...")
@@ -99,17 +95,13 @@ class ItemKNN(RecSys):
         start = timer()
         s = knn(s, self.knn)
         print("elapsed: {:.3f}s\n".format(timer() - start))
-
         return s
 
     def rate(self, dataset, targets):
-        print("Using all dataset " + str(dataset.nnz))
-
         s = self.compute_similarity(dataset)
         print("computing ratings ...")
         start = timer()
 
-        print(len(targets))
         # Compute playlist-track ratings
         ratings = (dataset[targets, :] * s).tocsr()
         print("elapsed: {:.3f}s\n".format(timer() - start))
