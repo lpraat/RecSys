@@ -4,7 +4,6 @@ __pycache__
 .ipynb_checkpoints
 cache
 /data/processed
-submissions
 temp/
 tuned
 *.pyc
@@ -21,14 +20,3 @@ env
 .vscode
 .idea
 *.code-workspace
-
-# Personal runfiles -----------------------------
-#| This files are different from user to user |#
-/src/run.py
-/src/tuning/tune.py
-/src/alg/smart_ensemble/preds
-/src/alg/smart_ensemble/preds_test
-/src/alg/smart_ensemble/validate
-/src/alg/smart_ensemble/smart_max.csv
-/src/alg/smart_ensemble/smart_borda.csv
-src/alg/smart_ensemble/test
