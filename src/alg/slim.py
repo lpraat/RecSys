@@ -94,6 +94,12 @@ class Slim(RecSys):
 
         return batches
 
+    def train(self, lr, batch_size, num_epochs, urm, slim_matrix):
+        if batch_size == 1:
+            self.sgd(lr, num_epochs, urm, slim_matrix)
+        else:
+            self.mgd(lr, batch_size, num_epochs, urm, slim_matrix)
+
     def sgd(self, lr, num_epochs, urm, slim_matrix):
         """ Stochasting gradient descent """
 
@@ -133,12 +139,6 @@ class Slim(RecSys):
                 slim_matrix[j, user_indices] -= lr * (
                     gradient + (self.lambda_j * slim_matrix[j, user_indices]))
                 slim_matrix[j, j] = 0
-
-    def train(self, lr, batch_size, num_epochs, urm, slim_matrix):
-        if batch_size == 1:
-            self.sgd(lr, num_epochs, urm, slim_matrix)
-        else:
-            self.mgd(lr, batch_size, num_epochs, urm, slim_matrix)
 
     def mgd(self, lr, batch_size, num_epochs, urm, slim_matrix):
         """ Mini batch gradient descent """

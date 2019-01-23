@@ -96,6 +96,9 @@ class RecSys:
             If no value is provided the method searches for a 'test_set' record in the cache
         k : scalar
             Number of predictions on which to evaluate
+        targets :  An ordered list of users for which to compute the ratings
+            If no list is provided, predictions are computed for all users
+            of the input interactions matrix
         """
 
         test_set = self.cache.fetch(test_set) if isinstance(test_set, str) else test_set

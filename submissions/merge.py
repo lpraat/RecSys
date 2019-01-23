@@ -35,13 +35,7 @@ final_l = []
 def merge(l1, l2):
     l3 = []
     curr = l1
-    both = False
     while len(l3) < 10:
-
-        if both:
-            l1.pop(0)
-            l2.pop(0)
-            both = False
 
         if curr[0] not in l3:
             el = curr.pop(0)

@@ -9,9 +9,8 @@ from src.const import NUM_TRACKS
 
 
 class Light(RecSys):
-    def __init__(self, no_components=10, learning_schedule='adagrad',
-                 loss='warp', learning_rate=0.05, epochs=1, knn=1000, num_threads=mp.cpu_count()):
-
+    def __init__(self, no_components=10, learning_schedule='adagrad', loss='warp', learning_rate=0.05, epochs=1,
+                 knn=1000, num_threads=mp.cpu_count()):
         super().__init__()
         self.no_components = no_components
         self.learning_schedule = learning_schedule
