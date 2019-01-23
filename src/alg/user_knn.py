@@ -19,7 +19,7 @@ class UserKNN(RecSys):
     Recommends base on the similarity between users
     """
 
-    def __init__(self, alpha=0.5, asym=True, knn=np.inf, h=0, qfunc=None, splus=False):
+    def __init__(self, alpha=0.5, asym=True, knn=np.inf, h=0):
         """
         Constructor
 
@@ -33,8 +33,6 @@ class UserKNN(RecSys):
             Limit influence to knn most similar items
         h : scalar
             Shrink term
-        qfunc : lambda
-            A function individually applied to similarities
         """
 
         # Super constructor
@@ -44,9 +42,7 @@ class UserKNN(RecSys):
         self.alpha = np.float32(alpha)
         self.asym = asym
         self.h = np.float32(h)
-        self.qfunc = qfunc
         self.knn = knn
-        self.splus = splus
 
     def compute_similarity(self, dataset=None):
         print("computing similarity between users ...")
