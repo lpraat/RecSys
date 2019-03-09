@@ -1,3 +1,0 @@
-CodicePersona, Surname, Name
-10452804, Mecchia, Andrea
-10498975, Pratissoli, Lorenzo
