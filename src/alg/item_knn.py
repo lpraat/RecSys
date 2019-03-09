@@ -1,31 +1,26 @@
-"""
-This file contains the ItemKNN recommender which performs
-an item-based collaborative filtering algorithm to determine the ranking
-of each item for each user.
-"""
-
 from timeit import default_timer as timer
 
 import numpy as np
 
 from .recsys import RecSys
 from .utils import cosine_similarity, knn
+from sklearn.preprocessing import normalize
 
 
 class ItemKNN(RecSys):
     """
     Item recommender.
 
-    Recommends items based on the similarity between items
+    Recommends items to users based on the similarity between items
     """
 
-    def __init__(self, *features, alpha=0.5, asym=True, knn=np.inf, h=0):
+    def __init__(self, features=None, alpha=0.5, asym=True, knn=np.inf, h=0, normalize=True):
         """
         Constructor
 
         Parameters
         ---------------
-        *features : list
+        features : list
             A set of additional features, in the form of (feature x item) sparse matrix
             Features are combined when computing the similarity matrix
             A tuple contains a sparse matrix (or a string), a weight and a dict of configurations
@@ -38,20 +33,17 @@ class ItemKNN(RecSys):
         h : scalar
             Shrink term
         """
-        # Super constructor
         super().__init__()
-
-        # Initial values
         self.alpha = np.float32(alpha)
         self.asym = asym
         self.h = np.float32(h)
         self.knn = knn
-        self.features = features
+        self.features = features if features else []
+        self.normalize = normalize
 
-    def compute_similarity(self, dataset=None):
+    def compute_similarity(self, dataset):
         print("computing similarity ...")
         start = timer()
-        # Compute similarity matrix
         s = cosine_similarity(dataset, alpha=self.alpha, asym=self.asym, h=self.h, dtype=np.float32)
         print("elapsed: {:.3f}s\n".format(timer() - start))
 
@@ -68,14 +60,14 @@ class ItemKNN(RecSys):
             feature_asym = feature_config["asym"] if "asym" in feature_config else True
             feature_h = feature_config["h"] if "h" in feature_config else 0
 
-            print("loading data for feature {} ...\n".format(feature_i))
             # Fetch feature from cache
+            print("loading data for feature {} ...\n".format(feature_i))
             feature = self.cache.fetch(feature).tocsr() if isinstance(feature, str) else feature
 
             if feature is not None:
                 print("computing similarity for feature {} ...".format(feature_i))
                 start = timer()
-                # Compute similarity matrix
+
                 s += cosine_similarity(
                     feature,
                     alpha=feature_alpha,
@@ -94,15 +86,19 @@ class ItemKNN(RecSys):
         print("computing similarity knn...")
         start = timer()
         s = knn(s, self.knn)
+
+        if self.features and self.normalize:
+            # Normalize the weighted sum
+            s = normalize(s, norm='l2', axis=1)
+
         print("elapsed: {:.3f}s\n".format(timer() - start))
         return s
 
     def rate(self, dataset, targets):
         s = self.compute_similarity(dataset)
+
         print("computing ratings ...")
         start = timer()
-
-        # Compute playlist-track ratings
         ratings = (dataset[targets, :] * s).tocsr()
         print("elapsed: {:.3f}s\n".format(timer() - start))
         del s

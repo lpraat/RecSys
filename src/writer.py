@@ -1,8 +1,3 @@
-"""
-This file contains function used to write to disk
-and create submission files
-"""
-
 import datetime
 import os
 

@@ -16,14 +16,15 @@ class HybridSimilarity(RecSys):
     models.
     """
 
-    def __init__(self, *models, knn=np.inf, mode='item', normalize=True):
+    def __init__(self, models, knn=np.inf, mode='item', normalize=True):
         super().__init__()
-        self.models = list(models)
+        self.models = models
         self.knn = knn
         self.mode = mode
         self.normalize = normalize
 
     def compute_similarity(self, dataset):
+
         if not self.models:
             raise RuntimeError("You already called rate")
 
@@ -41,11 +42,11 @@ class HybridSimilarity(RecSys):
 
         if self.normalize:
             s = normalize(s, norm='l2', axis=1)
+
         s = knn(s, self.knn)
         return s
 
     def rate(self, dataset, targets):
-
         s = self.compute_similarity(dataset)
 
         print("computing ratings ...")

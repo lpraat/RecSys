@@ -1,8 +1,3 @@
-"""
-This file contains the metrics through which recommender models are evaluated.
-"""
-
-
 def ap_at_k(preds, targets, k=10):
     """
     Calculates the AP@K(Average Precision at K).

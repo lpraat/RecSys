@@ -2,7 +2,7 @@ import time
 
 import numpy as np
 import scipy.sparse as sp
-from numpy.linalg import linalg as la
+from numpy.linalg import linalg as LA
 
 from src.alg.bpr import BPRSampler
 from src.alg.recsys import RecSys
@@ -10,8 +10,39 @@ from src.alg.utils import knn
 
 
 class Slim(RecSys):
-    def __init__(self, all_dataset, lr=0.01, batch_size=1, epochs=1,
-                 lambda_i=0, lambda_j=0, knn=np.inf, dual=False):
+    def __init__(self,
+                 all_dataset,
+                 lr=0.01,
+                 batch_size=1,
+                 epochs=1,
+                 lambda_i=0,
+                 lambda_j=0,
+                 knn=np.inf,
+                 dual=False):
+        """Main constructor.
+
+        Parameters
+        ---------------
+            all_dataset : bool
+                Wether to use all the dataset or just the train set.
+            lr : float
+                Learning rate.
+            batch_size : int
+                Batch size.
+            epochs : int
+                Number of training epochs.
+            lambda_i : float
+                Positive item/user regularization term
+            lambda_j : float
+                Negative item/user regularization term
+            knn : int
+                How many neighbors to retain.
+            dual : bool
+                Whether to apply the dual formulation.
+                The dual of slim picks a positive user and a negative user for a given item rather than picking
+                a positive item and a negative item for a given user. As a consequence it will build a similarity matrix
+                whose dimension is number_users x number_users.
+        """
         super().__init__()
 
         self.dual = dual
@@ -29,8 +60,6 @@ class Slim(RecSys):
         self.num_interactions = None
         self.bpr_sampler = None
 
-        self.s = False
-
     def compute_similarity(self, dataset):
         if self.all_dataset:
             urm = self.cache.fetch("interactions")
@@ -46,6 +75,7 @@ class Slim(RecSys):
         self.bpr_sampler = BPRSampler(urm)
 
         slim_dim = urm.shape[1]
+
         # Similarity matrix slim is trying to learn
         s = np.zeros((slim_dim, slim_dim), dtype=np.float32)
 
@@ -58,9 +88,6 @@ class Slim(RecSys):
         start = time.time()
         s = knn(s.T, knn=self.knn)
         print("elapsed: {:.3f}s\n".format(time.time() - start))
-
-        self.cached = True
-        self.s = s
 
         return s
 
@@ -94,12 +121,6 @@ class Slim(RecSys):
 
         return batches
 
-    def train(self, lr, batch_size, num_epochs, urm, slim_matrix):
-        if batch_size == 1:
-            self.sgd(lr, num_epochs, urm, slim_matrix)
-        else:
-            self.mgd(lr, batch_size, num_epochs, urm, slim_matrix)
-
     def sgd(self, lr, num_epochs, urm, slim_matrix):
         """ Stochasting gradient descent """
 
@@ -127,7 +148,7 @@ class Slim(RecSys):
                 gradient = 1 / (1 + np.exp(x_uij))
 
                 # Get current loss
-                # loss = self.loss(x_ui, x_uj, x_uij, batched=False)
+                # loss = self.loss(x_ui, x_uj, x_uij)
                 # print(f"Current loss is {loss}")
 
                 # Update i parameters
@@ -140,10 +161,17 @@ class Slim(RecSys):
                     gradient + (self.lambda_j * slim_matrix[j, user_indices]))
                 slim_matrix[j, j] = 0
 
+    def train(self, lr, batch_size, num_epochs, urm, slim_matrix):
+        if batch_size == 1:
+            self.sgd(lr, num_epochs, urm, slim_matrix)
+        else:
+            self.mgd(lr, batch_size, num_epochs, urm, slim_matrix)
+
     def mgd(self, lr, batch_size, num_epochs, urm, slim_matrix):
         """ Mini batch gradient descent """
 
         for i in range(num_epochs):
+
             print(f"Sampling for epoch {i+1}")
             batches = self.build_batches(batch_size)
             print(f"Started epoch {i+1}")
@@ -154,7 +182,7 @@ class Slim(RecSys):
                 j = batch[:, 2]
                 m = batch.shape[0]
 
-                # # To compute loss
+                # To compute loss
                 # u_i_s = {}
                 # u_j_s = {}
                 # for sample in batch:
@@ -169,16 +197,16 @@ class Slim(RecSys):
                 # u_j = list(u_j_s.keys())
                 # j_u = list(u_j_s.values())
                 #
-                # i_param = urm[u_i].multiply(slim_matrix[i_u]).A
-                # j_param = urm[u_j].multiply(slim_matrix[j_u]).A
-                #
+                # i_param = self.urm[u_i].multiply(self.slim_matrix[i_u]).A
+                # j_param = self.urm[u_j].multiply(self.slim_matrix[j_u]).A
+
                 # Get current prediction
                 x_ui = urm[u, :].multiply(slim_matrix[i])
                 x_uj = urm[u, :].multiply(slim_matrix[j])
                 x_uij = np.sum(x_ui - x_uj, axis=1)
 
-                # # To compute loss
-                # loss = self.loss(i_param, j_param, x_uij, batched=True)
+                # Get current loss
+                # loss = self.loss(i_param, j_param, x_uij)
                 # print(f"Current loss is {loss}")
 
                 # Compute gradient of 1/m * log(sigmoid(x_uij))
@@ -196,11 +224,9 @@ class Slim(RecSys):
                 slim_matrix[j] -= lr * (gradient + ((self.lambda_j / m) * slim_matrix[j])) * items_mask
                 slim_matrix[j, j] = 0
 
-    # Minimized loss
-    def loss(self, i_param, j_param, x_uij, batched=False):
-        m = x_uij.shape[0] if batched else 1
+    def loss(self, i_param, j_param, x_uij):
+        m = x_uij.shape[0]
         loss = - (1 / m) * np.sum(np.log(1 / (1 + np.exp(-x_uij))))
+        reg = (0.5 / m) * (self.lambda_i * (LA.norm(i_param) ** 2) + self.lambda_j * (LA.norm(j_param) ** 2))
 
-        # L2 norm
-        reg = (0.5 / m) * (self.lambda_i * (la.norm(i_param) ** 2) + self.lambda_j * (la.norm(j_param) ** 2))
         return loss + reg

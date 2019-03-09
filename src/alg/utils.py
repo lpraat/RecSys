@@ -1,7 +1,3 @@
-"""
-This file contains various utility functions used in most of the recommender algorithms
-"""
-
 from timeit import default_timer as timer
 
 import numpy as np
@@ -93,7 +89,8 @@ def knn(s, knn=np.inf):
                 s.data[discard] = 0
 
         # Recompute sparsity
-        s = recompute_sparsity(s)
+        s.eliminate_zeros()
+
     return s
 
 
@@ -268,43 +265,3 @@ def predict(ratings, targets=None, k=10, mask=None, invert_mask=False):
 
     # Return predictions
     return preds
-
-
-def recompute_sparsity(mat):
-    """
-    Recompute the sparsity of a sparse matrix (i.e. remove zero elements)
-    Future operations can benefit from this
-
-    Parameters:
-    mat : sparse matrix
-        input matrix to recompute
-    """
-
-    # Use a csr matrix
-    if not isinstance(mat, sp.csr_matrix):
-        mat = mat.tocsr()
-
-    # First extract indices of non-zero elements
-    data_i = mat.data.nonzero()[0]
-    data = mat.data[data_i]
-
-    # Extract column indices of non-zero elements
-    indices = mat.indices[data_i]
-
-    # Update indptr offsets
-    indptr = [0]
-    for row_i in range(mat.shape[0]):
-        # Row start and end
-        row_start = mat.indptr[row_i]
-        row_end = mat.indptr[row_i + 1]
-
-        # Push number of non-zero elements
-        num_nonzero = np.count_nonzero(mat.data[row_start:row_end])
-        indptr.append(indptr[row_i] + num_nonzero)
-
-    # Rebuild matrix
-    return sp.csr_matrix((
-        data,
-        indices,
-        indptr
-    ), shape=mat.shape)

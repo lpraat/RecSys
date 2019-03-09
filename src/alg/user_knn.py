@@ -1,9 +1,3 @@
-"""
-This file contains the UserKNN recommender which performs
-a user-based collaborative filtering algorithm to determine the ranking
-of each item for each user.
-"""
-
 from timeit import default_timer as timer
 
 import numpy as np
@@ -21,8 +15,6 @@ class UserKNN(RecSys):
 
     def __init__(self, alpha=0.5, asym=True, knn=np.inf, h=0):
         """
-        Constructor
-
         Parameters
         -----------
         alpha : scalar
@@ -34,20 +26,15 @@ class UserKNN(RecSys):
         h : scalar
             Shrink term
         """
-
-        # Super constructor
         super().__init__()
-
-        # Initial values
         self.alpha = np.float32(alpha)
         self.asym = asym
         self.h = np.float32(h)
         self.knn = knn
 
-    def compute_similarity(self, dataset=None):
+    def compute_similarity(self, dataset):
         print("computing similarity between users ...")
         start = timer()
-        # Compute cosine similarity between users
         s = cosine_similarity(dataset.T, alpha=self.alpha, asym=self.asym, h=self.h, dtype=np.float32)
         print("elapsed time: {:.3f}s\n".format(timer() - start))
 
@@ -60,10 +47,11 @@ class UserKNN(RecSys):
 
     def rate(self, dataset, targets):
         s = self.compute_similarity(dataset)
+
         print("computing ratings ...")
         start = timer()
-        # Compute ratings
         ratings = (dataset.T * s).tocsr()
         print("elapsed time: {:.3f}s\n".format(timer() - start))
         del s
+
         return ratings.T[targets, :]

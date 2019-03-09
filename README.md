@@ -1,8 +1,14 @@
-# RecSys
+# RecSys 
+A set of different kind of recommender systems developed for the 
+[Recommender System 2018 Challenge Polimi](https://www.kaggle.com/c/recommender-system-2018-challenge-polimi/leaderboard)
 
-### How to get the best submission
-- Using python3
-- Run python3 -r requirements.txt in the RecSys folder 
-- Run model1.py and model2.py under RecSys/src/run folder
-- Run merge.py under the RecSys/submissions folder
-- A new.csv file will be created in the same directory, that is the submission
+
+You can find an implementation of:
+
+- **Item-based KNN** collaborative filtering algorithm
+- **User-based KNN** collaborative filtering algorithm
+- Sparse LInear Methods(**SLIM**) algorithm with Bayesian personalized ranking(**BPR**)
+- **Hybrid** models to ensemble different recommenders
+- ...and more
+
+You can also find an implementation of a hyperparameter tuner used to search in the hyperparameter space.

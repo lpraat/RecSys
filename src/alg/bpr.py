@@ -2,13 +2,15 @@ import numpy as np
 
 
 class BPRSampler:
+    """
+    Bayesian personalized ranking sampler
+    """
     def __init__(self, urm):
         self.urm = urm.tocsr()
         self.lil_urm = urm.tolil()
 
     def sample(self):
         while True:
-
             # Get a random user and its interactions
             user = np.random.choice(self.urm.shape[0])
             user_interactions = self.urm.indices[self.urm.indptr[user]:self.urm.indptr[user + 1]]

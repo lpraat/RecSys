@@ -1,7 +1,3 @@
-"""
-This file contains the base class for all recommender algorithms.
-"""
-
 from timeit import default_timer as timer
 
 from src.data import Cache
@@ -15,21 +11,13 @@ class RecSys:
 
     Attributes
     ----------
-    dataset : str
-        Name of the dataset from cache to be used to generate recommendations.
     cache : Cache
         The global cache where all the data is kept.
     """
 
     def __init__(self):
-        """ Default constructor """
-
-        # Global cache
         global cache
 
-        # Create cache if necessary
-        # This ensures that only one global cache exists
-        # Don't reuse memory!
         try:
             self.cache = cache
         except NameError:
@@ -42,7 +30,7 @@ class RecSys:
 
         Parameters
         -----------
-        dataset : sparse matrix or string
+        dataset : sparse matrix or str
             Input (user x items) interactions matrix to use
             If a sparse matrix is provided it should be in csr format
             If a string is passed, it searches for it in the global cache
@@ -70,9 +58,9 @@ class RecSys:
         # Compute ratings
         ratings = self.rate(dataset, targets)
 
+        # Predict
         print("predicting ...")
         start = timer()
-        # Predict
         preds = predict(ratings, targets=targets, k=k, mask=dataset[targets, :], invert_mask=True)
         print("elapsed: {:.3f}s\n".format(timer() - start))
         del ratings
@@ -87,13 +75,15 @@ class RecSys:
 
         Parameters
         -----------
-        train_set : sparse matrix or string
+        train_set : sparse matrix or str
             Usually a subset of the interactions matrix used to compute k predictions
             If a string is passed, the train set is fetched from the cache
             By default, the method expects to find a 'train_set' record in the cache
-        test_set : list of lists
+        test_set : list of lists or str
             List of target predictions, one for each user in the interactions matrix
             If no value is provided the method searches for a 'test_set' record in the cache
+        targets: str
+            targets string in the global cache for which to compute predictions
         k : scalar
             Number of predictions on which to evaluate
         targets :  An ordered list of users for which to compute the ratings
@@ -106,8 +96,8 @@ class RecSys:
         # Predict
         preds = self.run(dataset=train_set, targets=targets, k=k)
 
-        print("evaluating model ...")
         # Evaluate model
+        print("evaluating model ...")
         score = evaluate(preds, test_set)
         print("MAP@{}: {:.5f}\n".format(k, score))
 
@@ -134,5 +124,4 @@ class RecSys:
             If no list is provided, predictions are computed for all users
             of the input interactions matrix
         """
-
         raise NotImplementedError
