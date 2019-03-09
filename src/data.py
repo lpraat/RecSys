@@ -1,8 +1,3 @@
-"""
-This file contains functions to build the train set,
-load files from cache and store data in a runtime global cache class
-"""
-
 import math
 import os
 import pickle
@@ -11,54 +6,8 @@ from timeit import default_timer as timer
 
 import numpy as np
 
-from src.const import cache_path, NUM_PLAYLIST
+from src.const import cache_path
 from src.parser import parse_interactions, parse_tracks, parse_targets
-
-
-def build_train_set_fixed(interactions, k=1):
-    # Output variables
-    items = list(interactions.items())
-    train_set = interactions.copy()
-    test_set = []
-
-    pos = 0
-    for playlist_id in range(NUM_PLAYLIST):
-        # Get tracks
-        tracks = []
-        for i in range(pos, len(items)):
-            key = items[i][0]
-
-            if playlist_id != key[0]:
-                break
-
-            # Add to track list
-            tracks.append(key[1])
-            pos += 1
-
-        # Adjust k to have at least one track in playlist
-        k = len(tracks) - 1 if len(tracks) <= k else k
-
-        # Generate indices to extract from interactions
-        # This indices are added to the test set
-        indices = []
-        test_set_i = []
-        for _ in range(k):
-            t = random.randint(0, len(tracks) - 1)
-            while t in indices:
-                t = random.randint(0, len(tracks) - 1)
-            indices.append(t)
-
-            # Remove and add to test set
-            track_id = tracks[t]
-            train_set[playlist_id, track_id] = 0
-            test_set_i.append(track_id)
-        test_set.append(test_set_i)
-
-        # Debug
-        # print("building train set: {}".format(playlist_id))
-
-    # Return built sets
-    return (train_set, test_set)
 
 
 def build_train_set_uniform(interactions, targets=None, p=0.15):
@@ -91,7 +40,7 @@ def build_train_set_uniform(interactions, targets=None, p=0.15):
 
     for playlist_id in targets:
         # Get tracks
-        tracks = csr_inter.indices[csr_inter.indptr[playlist_id]:csr_inter.indptr[playlist_id+1]]
+        tracks = csr_inter.indices[csr_inter.indptr[playlist_id]:csr_inter.indptr[playlist_id + 1]]
 
         # Calc number of tracks to extract
         k = math.ceil(len(tracks) * p)
@@ -113,8 +62,6 @@ def build_train_set_uniform(interactions, targets=None, p=0.15):
 
         test_set[playlist_id] = test_set_i
 
-        # Debug
-        #print("building train set: {}".format(playlist_id))
     print("elapsed time: {:.3f}s\n".format(timer() - start))
 
     # Return built sets
@@ -135,7 +82,7 @@ def load_file(filename):
 def save_file(filename, obj):
     """ Save an object to the persistent cache and return the object """
 
-    if obj != None:
+    if obj is not None:
         # Create directory if necessary
         os.makedirs(cache_path, exist_ok=True)
 
@@ -166,20 +113,20 @@ class Cache:
 
         targets = load_file("targets.obj")
 
-        if interactions == None:
+        if interactions is None:
             interactions = parse_interactions()
             save_file("interactions.obj", interactions)
 
-        if album_set == None or artist_set == None:
+        if album_set is None or artist_set is None:
             album_set, artist_set = parse_tracks()
             save_file("album_set.obj", album_set)
             save_file("artist_set.obj", artist_set)
 
-        if targets == None:
+        if targets is None:
             targets = parse_targets("target_playlists.csv")
             save_file("targets.obj", targets)
-        
-        if train_set == None or test_set == None:
+
+        if train_set is None or test_set is None:
             train_set, test_set = build_train_set_uniform(interactions, targets, 0.2)
             save_file("train_set.obj", train_set)
             save_file("test_set.obj", test_set)
@@ -192,7 +139,7 @@ class Cache:
             "album_set": album_set,
             "artist_set": artist_set,
             "targets": targets,
-            "top_pop": np.array([ 2272, 18266, 13980,  2674, 17239, 10496, 15578,  5606, 10848, 8956])
+            "top_pop": np.array([2272, 18266, 13980, 2674, 17239, 10496, 15578, 5606, 10848, 8956])
         })
 
     def fetch(self, key):

@@ -10,8 +10,39 @@ from src.alg.utils import knn
 
 
 class Slim(RecSys):
-    def __init__(self, all_dataset, lr=0.01, batch_size=1, epochs=1,
-                 lambda_i=0, lambda_j=0, knn=np.inf, dual=False):
+    def __init__(self,
+                 all_dataset,
+                 lr=0.01,
+                 batch_size=1,
+                 epochs=1,
+                 lambda_i=0,
+                 lambda_j=0,
+                 knn=np.inf,
+                 dual=False):
+        """Main constructor.
+
+        Parameters
+        ---------------
+            all_dataset : bool
+                Wether to use all the dataset or just the train set.
+            lr : float
+                Learning rate.
+            batch_size : int
+                Batch size.
+            epochs : int
+                Number of training epochs.
+            lambda_i : float
+                Positive item/user regularization term
+            lambda_j : float
+                Negative item/user regularization term
+            knn : int
+                How many neighbors to retain.
+            dual : bool
+                Whether to apply the dual formulation.
+                The dual of slim picks a positive user and a negative user for a given item rather than picking
+                a positive item and a negative item for a given user. As a consequence it will build a similarity matrix
+                whose dimension is number_users x number_users.
+        """
         super().__init__()
 
         self.dual = dual
@@ -29,15 +60,7 @@ class Slim(RecSys):
         self.num_interactions = None
         self.bpr_sampler = None
 
-        self.cached = False
-        self.s = False
-
     def compute_similarity(self, dataset):
-
-        print("Using all dataset " + str(dataset.nnz))
-        if self.cached:
-            print("Model was already trained, using cache...")
-            return self.s
         if self.all_dataset:
             urm = self.cache.fetch("interactions")
         else:
@@ -52,6 +75,7 @@ class Slim(RecSys):
         self.bpr_sampler = BPRSampler(urm)
 
         slim_dim = urm.shape[1]
+
         # Similarity matrix slim is trying to learn
         s = np.zeros((slim_dim, slim_dim), dtype=np.float32)
 
@@ -65,13 +89,9 @@ class Slim(RecSys):
         s = knn(s.T, knn=self.knn)
         print("elapsed: {:.3f}s\n".format(time.time() - start))
 
-        self.cached = True
-        self.s = s
-
         return s
 
     def rate(self, dataset, targets):
-
         s = self.compute_similarity(dataset)
 
         print("Computing Slim ratings...")

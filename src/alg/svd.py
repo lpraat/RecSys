@@ -7,7 +7,9 @@ from src.alg.utils import knn
 
 
 class SVD(RecSys):
-
+    """
+    Singular Value Decomposition based recommender.
+    """
     def __init__(self, factors=8, knn=np.inf):
         super().__init__()
         self.factors = factors

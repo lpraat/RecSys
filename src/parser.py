@@ -1,7 +1,3 @@
-"""
-This file contains functions used to parse raw data
-"""
-
 import numpy as np
 import scipy.sparse as sp
 
@@ -32,10 +28,9 @@ def parse_tracks(filename="tracks.csv"):
             artist_set[artist, track] = 1
 
             # Debug
-            print("\033[2J")
-            print("parsing tracks: {:.2}".format(i / num_lines))
+            print("\r Parsing tracks: {:.2}%".format(i / num_lines) * 100)
 
-        return (album_set, artist_set)
+        return album_set, artist_set
 
 
 def parse_interactions(filename="train.csv"):
@@ -54,8 +49,7 @@ def parse_interactions(filename="train.csv"):
             interactions[playlist, track] = 1
 
             # Debug
-            print("\033[2J")
-            print("parsing interactions: {:.2}".format(i / num_lines))
+            print("\r Parsing interactions: {:.2}%".format((i / num_lines) * 100))
 
         # Return matrix
         return interactions

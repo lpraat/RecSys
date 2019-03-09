@@ -1,7 +1,3 @@
-"""
-This file contains constants and program paths
-"""
-
 import os
 
 # Constants

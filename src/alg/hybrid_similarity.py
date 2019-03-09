@@ -9,7 +9,6 @@ from src.alg.utils import knn
 
 
 class HybridSimilarity(RecSys):
-
     """
     HybridSimilarity recommender.
 
@@ -17,9 +16,9 @@ class HybridSimilarity(RecSys):
     models.
     """
 
-    def __init__(self, *models, knn=np.inf, mode='item', normalize=True):
+    def __init__(self, models, knn=np.inf, mode='item', normalize=True):
         super().__init__()
-        self.models = list(models)
+        self.models = models
         self.knn = knn
         self.mode = mode
         self.normalize = normalize
@@ -29,7 +28,6 @@ class HybridSimilarity(RecSys):
         if not self.models:
             raise RuntimeError("You already called rate")
 
-        # shape[1] since we just use this method with item similarities
         if self.mode == 'item':
             s = sp.csr_matrix((dataset.shape[1], dataset.shape[1]), dtype=np.float32)
         else:
@@ -44,11 +42,11 @@ class HybridSimilarity(RecSys):
 
         if self.normalize:
             s = normalize(s, norm='l2', axis=1)
+
         s = knn(s, self.knn)
         return s
 
     def rate(self, dataset, targets):
-        print("Using all dataset " + str(dataset.nnz))
         s = self.compute_similarity(dataset)
 
         print("computing ratings ...")

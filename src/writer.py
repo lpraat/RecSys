@@ -1,8 +1,3 @@
-"""
-This file contains function used to write to disk
-and create submission files
-"""
-
 import datetime
 import os
 
@@ -20,7 +15,7 @@ def create_submission(name, recs):
     """
 
     submissions_path = os.path.dirname(os.path.realpath(__file__)) + "/../submissions"
-    
+
     # Create directory if necessary
     os.makedirs(submissions_path, exist_ok=True)
 
