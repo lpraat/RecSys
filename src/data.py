@@ -115,6 +115,7 @@ class Cache:
 
         if interactions is None:
             interactions = parse_interactions()
+            print("saving interactions to file...\n")
             save_file("interactions.obj", interactions)
 
         if album_set is None or artist_set is None:

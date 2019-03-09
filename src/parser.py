@@ -27,8 +27,9 @@ def parse_tracks(filename="tracks.csv"):
             album_set[album, track] = 1
             artist_set[artist, track] = 1
 
-            # Debug
-            print("\r Parsing tracks: {:.2}%".format(i / num_lines) * 100)
+            print("\rParsing tracks: {:.4}%".format((i / num_lines) * 100), end="")
+
+        print("\n")
 
         return album_set, artist_set
 
@@ -39,7 +40,7 @@ def parse_interactions(filename="train.csv"):
     with open(os.path.join(data_path, filename), "r") as f:
         # Discard first line
         lines = f.readlines()[1:]
-        num_lines = float(len(lines))
+        num_lines = len(lines)
 
         # Create container
         interactions = sp.dok_matrix((NUM_PLAYLIST, NUM_TRACKS), dtype=np.uint8)
@@ -48,9 +49,9 @@ def parse_interactions(filename="train.csv"):
             playlist, track = [int(i) for i in line.split(",")]
             interactions[playlist, track] = 1
 
-            # Debug
-            print("\r Parsing interactions: {:.2}%".format((i / num_lines) * 100))
+            print("\rParsing interactions: {:.4}%".format((i / num_lines) * 100), end="")
 
+        print("\n")
         # Return matrix
         return interactions
 
