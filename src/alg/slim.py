@@ -19,8 +19,7 @@ class Slim(RecSys):
                  lambda_j=0,
                  knn=np.inf,
                  dual=False):
-        """Main constructor.
-
+        """
         Parameters
         ---------------
             all_dataset : bool
@@ -32,9 +31,9 @@ class Slim(RecSys):
             epochs : int
                 Number of training epochs.
             lambda_i : float
-                Positive item/user regularization term
+                Positive item/user regularization term.
             lambda_j : float
-                Negative item/user regularization term
+                Negative item/user regularization term.
             knn : int
                 How many neighbors to retain.
             dual : bool
