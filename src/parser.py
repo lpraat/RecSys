@@ -58,12 +58,7 @@ def parse_interactions(filename="train.csv"):
 
 def parse_targets(filename="target_playlists.csv"):
     """
-    Builds the matrix to be filled with recommendations
-    It is a matrix #targets x #recommendations+1 (10000 x 11)
-
-    Why 11 columns?
-    Column 0 is the id of the target playlist
-    Column 1 to 10 are the recommendations for that playlist
+    Builds a list with all the target playlists
     """
 
     with open(os.path.join(data_path, filename), "r") as f:

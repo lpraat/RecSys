@@ -260,7 +260,6 @@ def predict(ratings, targets=None, k=10, mask=None, invert_mask=False):
             ratings_i = np.append(ratings_i_data, np.zeros(delta, dtype=np.float32))
             sort_idxs = np.argsort(-ratings_i)
 
-        # Add to list
         preds[u] = list(np.resize(items_i[sort_idxs], k))
 
     # Return predictions

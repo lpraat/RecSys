@@ -4,14 +4,14 @@ import os
 
 def create_submission(name, recs):
     """
-    Builds the submission file from the recommendations matrix
+    Builds the submission file
 
     Parameters
     ---------------
     name : string
         Prefix of the submission file
     recs : dict
-        List of computed recommendations
+        Computed recommendations
     """
 
     submissions_path = os.path.dirname(os.path.realpath(__file__)) + "/../submissions"
